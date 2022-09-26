@@ -1,0 +1,1 @@
+python train.py --workers 8 --device 0 --batch-size 4 --data _Training/data.yaml --img 640 --cfg cfg/training/yolov7.yaml

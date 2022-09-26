@@ -1,0 +1,6 @@
+train: ./_Training/images/train
+val: ./_Training/images/val
+test: ./_Training/images/test
+
+nc: 1
+names: ['Vehicle']

@@ -1,0 +1,1 @@
+python tools/infer.py --weights models/yolov6n.pt --source ../Resources/TestV6.jpg
