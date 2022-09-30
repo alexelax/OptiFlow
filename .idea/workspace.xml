@@ -3,6 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="cb092a46-af21-427f-b076-f0e60f72d31f" name="Changes" comment="Add new version of YOLOv5 --&gt; Date: 27/09/2022">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Resources/traffic1.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Resources/traffic2.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/YOLOv6/__START_INFER.py" beforeDir="false" afterPath="$PROJECT_DIR$/YOLOv6/__START_INFER.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/YOLOv6/__START_TRAIN.py" beforeDir="false" afterPath="$PROJECT_DIR$/YOLOv6/__START_TRAIN.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/YOLOv6/_train/custom.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/YOLOv6/_train/custom.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,6 +40,8 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\YOLOv6\_eval\models" />
+      <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\YOLOv6\_eval" />
       <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\FirstApproach" />
     </key>
   </component>
