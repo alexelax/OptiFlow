@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="cb092a46-af21-427f-b076-f0e60f72d31f" name="Changes" comment="Create files START_TRAIN &amp; START_INFER&#10;Also create some directories">
-      <change afterPath="$PROJECT_DIR$/YOLOv5/_infer/models/yolov5s-cls.pt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+    <list default="true" id="cb092a46-af21-427f-b076-f0e60f72d31f" name="Changes" comment="Create files START_TRAIN &amp; START_INFER for V5&#10;Also create some directories">
+      <change afterPath="$PROJECT_DIR$/YOLOv6/_infer/models/yolov6s.pt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/YOLOv5/__START_TRAIN.py" beforeDir="false" afterPath="$PROJECT_DIR$/YOLOv5/__START_TRAIN.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,13 +22,16 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectId" id="2FJEPC6ZdFo2RufjP9nUolpjukU" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "last_opened_file_path": "C:/Users/Alex/PycharmProjects/Smart-Traffic-Lights/YOLOv5",
@@ -99,7 +100,14 @@
       <option name="project" value="LOCAL" />
       <updated>1664546020719</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Create files START_TRAIN &amp; START_INFER for V5&#10;Also create some directories">
+      <created>1664804474285</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1664804474285</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -126,6 +134,7 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <ignored-roots>
       <path value="$PROJECT_DIR$/YOLOv5" />
     </ignored-roots>
@@ -134,6 +143,7 @@
     <MESSAGE value="Create temporary empty branch for restore all files" />
     <MESSAGE value="Add new version of YOLOv5 --&gt; Date: 27/09/2022" />
     <MESSAGE value="Create files START_TRAIN &amp; START_INFER&#10;Also create some directories" />
-    <option name="LAST_COMMIT_MESSAGE" value="Create files START_TRAIN &amp; START_INFER&#10;Also create some directories" />
+    <MESSAGE value="Create files START_TRAIN &amp; START_INFER for V5&#10;Also create some directories" />
+    <option name="LAST_COMMIT_MESSAGE" value="Create files START_TRAIN &amp; START_INFER for V5&#10;Also create some directories" />
   </component>
 </project>
