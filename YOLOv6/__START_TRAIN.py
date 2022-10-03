@@ -1,17 +1,10 @@
 import tools.train as train
 import argparse
-import os 
+import os
 
-
-#batch command
-#python toolss/train.py --img 640 --batch 4 --epochs 100 --conf configs/yolov6n.py --data _Training/data.yaml --device 0
-                                        
-
-
-if __name__ == '__main__':       
-    if os.path.split(os.getcwd() )[1] != "YOLOv6":
+if __name__ == '__main__':
+    if os.path.split(os.getcwd())[1] != "YOLOv6":
         os.chdir("YOLOv6")
-
 
     # Variables to set for parser
     # Path of train file
@@ -25,7 +18,7 @@ if __name__ == '__main__':
     # Train image size (pixels)
     imgSize = 640
     # Number of samples (images) processed before the model is updated for all GPUs
-    batchSize = 4
+    batchSize = 32
     # Number of complete passes through the training dataset
     epoches = 100
     # Number of workers simultaneously putting data into RAM (N.B. setting workers to number of cores is a good rule)

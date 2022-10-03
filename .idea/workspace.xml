@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="cb092a46-af21-427f-b076-f0e60f72d31f" name="Changes" comment="Create files START_TRAIN &amp; START_INFER for V5&#10;Also create some directories">
-      <change afterPath="$PROJECT_DIR$/YOLOv6/_infer/models/yolov6s.pt" afterDir="false" />
+    <list default="true" id="cb092a46-af21-427f-b076-f0e60f72d31f" name="Changes" comment="Add .pt">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/YOLOv6/__RESUME_TRAIN.py" beforeDir="false" afterPath="$PROJECT_DIR$/YOLOv6/__RESUME_TRAIN.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,6 +43,7 @@
       <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\YOLOv5" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\YOLOv6\_infer\models" />
       <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\YOLOv5\_infer\models" />
       <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\YOLOv6\_eval\models" />
       <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\YOLOv6\_eval" />
@@ -107,7 +108,14 @@
       <option name="project" value="LOCAL" />
       <updated>1664804474285</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Add .pt">
+      <created>1664816159319</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1664816159319</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -144,6 +152,7 @@
     <MESSAGE value="Add new version of YOLOv5 --&gt; Date: 27/09/2022" />
     <MESSAGE value="Create files START_TRAIN &amp; START_INFER&#10;Also create some directories" />
     <MESSAGE value="Create files START_TRAIN &amp; START_INFER for V5&#10;Also create some directories" />
-    <option name="LAST_COMMIT_MESSAGE" value="Create files START_TRAIN &amp; START_INFER for V5&#10;Also create some directories" />
+    <MESSAGE value="Add .pt" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add .pt" />
   </component>
 </project>
