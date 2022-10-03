@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="cb092a46-af21-427f-b076-f0e60f72d31f" name="Changes" comment="Add new version of YOLOv5 --&gt; Date: 27/09/2022">
+    <list default="true" id="cb092a46-af21-427f-b076-f0e60f72d31f" name="Changes" comment="Create files START_TRAIN &amp; START_INFER&#10;Also create some directories">
+      <change afterPath="$PROJECT_DIR$/YOLOv5/_infer/models/yolov5s-cls.pt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/traffic1.mp4" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/traffic2.mp4" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/YOLOv6/__START_INFER.py" beforeDir="false" afterPath="$PROJECT_DIR$/YOLOv6/__START_INFER.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/YOLOv6/__START_TRAIN.py" beforeDir="false" afterPath="$PROJECT_DIR$/YOLOv6/__START_TRAIN.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/YOLOv6/_train/custom.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/YOLOv6/_train/custom.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/YOLOv5/__START_TRAIN.py" beforeDir="false" afterPath="$PROJECT_DIR$/YOLOv5/__START_TRAIN.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -31,15 +29,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "last_opened_file_path": "C:/Users/Alex/PycharmProjects/Smart-Traffic-Lights/YOLOv5",
+    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\YOLOv5" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\YOLOv5\_infer\models" />
       <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\YOLOv6\_eval\models" />
       <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\YOLOv6\_eval" />
       <recent name="C:\Users\Alex\PycharmProjects\Smart-Traffic-Lights\FirstApproach" />
@@ -89,7 +92,14 @@
       <option name="project" value="LOCAL" />
       <updated>1664282328743</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Create files START_TRAIN &amp; START_INFER&#10;Also create some directories">
+      <created>1664546020719</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1664546020719</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -116,10 +126,14 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$/YOLOv5" />
+    </ignored-roots>
     <MESSAGE value="Create branch for YOLOv5 and reorder old files" />
     <MESSAGE value="Create branch for YOLOv6 and reorder old files" />
     <MESSAGE value="Create temporary empty branch for restore all files" />
     <MESSAGE value="Add new version of YOLOv5 --&gt; Date: 27/09/2022" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add new version of YOLOv5 --&gt; Date: 27/09/2022" />
+    <MESSAGE value="Create files START_TRAIN &amp; START_INFER&#10;Also create some directories" />
+    <option name="LAST_COMMIT_MESSAGE" value="Create files START_TRAIN &amp; START_INFER&#10;Also create some directories" />
   </component>
 </project>
