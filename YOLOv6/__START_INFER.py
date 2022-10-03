@@ -6,10 +6,10 @@ if __name__ == '__main__':
     if os.path.split(os.getcwd() )[1] != "YOLOv6":
         os.chdir("YOLOv6")
 
-        
+
     # Variables to set for parser
     # Model path for inference
-    pathInference = './_infer/models/yolo6s.pt'
+    pathInference = './_infer/models/train-n-100epoch.pt'
     # The path with the file to be evaluated
     pathEvalData = '../Resources/infer_data/traffic1.mp4'
     # Path of train file
@@ -32,6 +32,10 @@ if __name__ == '__main__':
     hideLabels = False
     # Hide confidences
     hideConfidences = False
+    #saveImage
+    saveImage=True 
+    #viewImage
+    viewImage=True
 
 
     # Parser
@@ -46,9 +50,9 @@ if __name__ == '__main__':
     parser.add_argument('--max-det', type=int, default=maxInfsXImage, help='maximal inferences per image.')
     parser.add_argument('--device', default=device, help='device to run our model i.e. 0 or 0,1,2,3 or cpu.')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt.')
-    parser.add_argument('--save-img', action='store_false', help='save visuallized inference results.')
+    parser.add_argument('--save-img', default=saveImage,action='store_false', help='save visuallized inference results.')
     parser.add_argument('--save-dir', type=str, help='directory to save predictions in. See --save-txt.')
-    parser.add_argument('--view-img', action='store_true', help='show inference results')
+    parser.add_argument('--view-img', default=viewImage, action='store_true', help='show inference results')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by classes, e.g. --classes 0, or --classes 0 2 3.')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS.')
     parser.add_argument('--project', default=outputDir, help='save inference results to project/name.')

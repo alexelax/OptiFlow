@@ -3,6 +3,11 @@ import argparse
 import os 
 
 
+#batch command
+#python toolss/train.py --img 640 --batch 4 --epochs 100 --conf configs/yolov6n.py --data _Training/data.yaml --device 0
+                                        
+
+
 if __name__ == '__main__':       
     if os.path.split(os.getcwd() )[1] != "YOLOv6":
         os.chdir("YOLOv6")
@@ -12,7 +17,7 @@ if __name__ == '__main__':
     # Path of train file
     pathTrainSet = './_train/custom.yaml'
     # Config description file
-    pathConfigFile = './configs/yolov6s.py'
+    pathConfigFile = './configs/yolov6n.py'
     # Path to save outputs
     outputDir = './_train/output'
     # Experiment name, saved to outputDir/name
@@ -20,15 +25,15 @@ if __name__ == '__main__':
     # Train image size (pixels)
     imgSize = 640
     # Number of samples (images) processed before the model is updated for all GPUs
-    batchSize = 32
+    batchSize = 4
     # Number of complete passes through the training dataset
-    epoches = 400
+    epoches = 100
     # Number of workers simultaneously putting data into RAM (N.B. setting workers to number of cores is a good rule)
     workers = 8
     # The type of the device: cpu, 0 (for GPU), 0,1,2,3,... (for multi-GPU)
     device = '0'
     # The number of GPU's
-    gpuCount = 0
+    gpuCount = 1
     # After how many epochs does the model evaluate
     evalInterval = 20
     # Evaluating every epoch for last such epochs (can be jointly used with evalInterval)'

@@ -114,3 +114,7 @@ venv.bak/
 # model files
 *.onnx
 *.engine
+
+
+_train/output
+_infer/output
