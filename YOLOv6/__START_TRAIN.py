@@ -1,4 +1,3 @@
-import tools.train as train
 import argparse
 import os
 
@@ -6,13 +5,19 @@ if __name__ == '__main__':
     if os.path.split(os.getcwd())[1] != "YOLOv6":
         os.chdir("YOLOv6")
 
+
+    os.chdir("YOLOv6_repo")
+    #import va fatta qua, dopo il chdir cosi il file "infer" richiamato riesce a trovare le dipendenze
+    import YOLOv6_repo.tools.train as train
+
+
     # Variables to set for parser
     # Path of train file
-    pathTrainSet = './_train/custom.yaml'
+    pathTrainSet = '../_train/custom.yaml'
     # Config description file
     pathConfigFile = './configs/yolov6n.py'
     # Path to save outputs
-    outputDir = './_train/output'
+    outputDir = '../_train/output'
     # Experiment name, saved to outputDir/name
     name = 'trainExp'
     # Train image size (pixels)

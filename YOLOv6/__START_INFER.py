@@ -1,4 +1,3 @@
-import tools.infer as infer
 import argparse
 import os
 
@@ -6,13 +5,18 @@ if __name__ == '__main__':
     if os.path.split(os.getcwd())[1] != "YOLOv6":
         os.chdir("YOLOv6")
 
+    
+    os.chdir("YOLOv6_repo")
+    #import va fatta qua, dopo il chdir cosi il file "infer" richiamato riesce a trovare le dipendenze
+    import YOLOv6_repo.tools.infer as infer
+
     # Variables to set for parser
     # Model path for inference
-    pathInference = './_infer/models/train-n-100epoch.pt'
+    pathInference = '../_infer/models/train-n-100epoch.pt'
     # The path with the file to be evaluated
-    pathEvalData = '../Resources/infer_data/traffic1.mp4'
+    pathEvalData = '../../Resources/infer_data/traffic1.mp4'
     # Path of train file
-    pathTrainSet = './_train/custom.yaml'
+    pathTrainSet = '../_train/custom.yaml'
     # The image-size(h,w) in inference size (N.B. the size of the image should be the same of the train)
     imgSize = [640, 640]
     # Confidence threshold for inference
@@ -24,7 +28,7 @@ if __name__ == '__main__':
     # The type of the device to run the model: cpu, 0 (for GPU), 0,1,2,3,... (for multi-GPU)
     device = '0'
     # Path to save outputs
-    outputDir = './_infer/output'
+    outputDir = '../_infer/output'
     # Experiment name, saved to outputDir/name
     name = 'inferExp'
     # Hide labels
