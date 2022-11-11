@@ -1,5 +1,6 @@
 import argparse
 import os
+import random
 
 if __name__ == '__main__':
     if os.path.split(os.getcwd())[1] != "YOLOv5":
@@ -16,9 +17,9 @@ if __name__ == '__main__':
     pathTrainSet = '../_train/custom.yaml'
 
     #Model.yaml Path
-    pathYamlBaseWeight = './models/yolov5s.yaml'
+    pathYamlBaseWeight = './models/yolov5n.yaml'    # './models/yolov5s.yaml'
     # Model path 
-    pathBaseWeight = '../_train/yolov5s-cls.pt'
+    pathBaseWeight = '../_train/yolov5n.pt'  # '../_train/yolov5s-cls.pt
     # Path to save outputs
     outputDir = '../_train/output'
     # Experiment name, saved to outputDir/name
@@ -28,7 +29,7 @@ if __name__ == '__main__':
     # Number of samples (images) processed before the model is updated for all GPUs
     batchSize = 32
     # Number of complete passes through the training dataset
-    epoches = 400
+    epoches = 800
     # Number of workers simultaneously putting data into RAM (N.B. setting workers to number of cores is a good rule)
     workers = 8
     # The type of the device: cpu, 0 (for GPU), 0,1,2,3,... (for multi-GPU)
@@ -45,8 +46,8 @@ if __name__ == '__main__':
     freezeLayers = 0
     # Save checkpoint every x epochs, neg value (-1) not save
     saveLastNEpoch = -1
-    # Global training seed
-    seed = 0
+    # Global training seed ( between 0 and 2**32 )
+    seed = random.randint(0,2**32)
     #hyperparameters path
     hyp = './data/hyps/hyp.scratch-low.yaml'
     #cache

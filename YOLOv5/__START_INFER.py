@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     # Variables to set for parser
     # Model path for inference
-    pathInference = '../_infer/best.pt'
+    pathInference = '../_infer/best_n.pt'
     # The path with the file to be evaluated
     pathEvalData = '../../Resources/infer_data/traffic1.mp4'
     # Path of train file
