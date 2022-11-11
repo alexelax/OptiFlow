@@ -11,13 +11,13 @@ if __name__ == '__main__':
 
     # Variables to set for parser
     # Model path for inference
-    pathInference = '../_infer/best_n.pt'
+    pathInference = '../_infer/best_n_320.pt'
     # The path with the file to be evaluated
     pathEvalData = '../../Resources/infer_data/traffic1.mp4'
     # Path of train file
     pathTrainSet = '../_train/custom.yaml'
     # The image-size(h,w) in inference size (N.B. the size of the image should be the same of the train)
-    imgSize = [640]
+    imgSize = [320]
     # Confidence threshold for inference
     threshold = 0.25
     # NMS IoU threshold for inference (Non-maximum Suppression)

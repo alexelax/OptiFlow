@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # Experiment name, saved to outputDir/name
     name = 'trainExp'
     # Train image size (pixels)
-    imgSize = 640
+    imgSize = 320
     # Number of samples (images) processed before the model is updated for all GPUs
     batchSize = 32
     # Number of complete passes through the training dataset
