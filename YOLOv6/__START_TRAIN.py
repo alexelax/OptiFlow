@@ -64,7 +64,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval-final-only', action='store_true', help='only evaluate at the final epoch')
     parser.add_argument('--heavy-eval-range', default=heavyEvalRange, type=int,
                         help='evaluating every epoch for last such epochs (can be jointly used with --eval-interval)')
-    parser.add_argument('--check-images', action='store_true', help='check images when initializing datasets')
+    parser.add_argument('--check-images', action='store_true', help='check images when initializing datasets') 
     parser.add_argument('--check-labels', action='store_true', help='check label files when initializing datasets')
     parser.add_argument('--output-dir', default=outputDir, type=str, help='path to save outputs')
     parser.add_argument('--name', default=name, type=str, help='experiment name, saved to output_dir/name')

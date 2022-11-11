@@ -4,7 +4,6 @@ import os
 if __name__ == '__main__':
     if os.path.split(os.getcwd())[1] != "YOLOv6":
         os.chdir("YOLOv6")
-
     
     os.chdir("YOLOv6_repo")
     #import va fatta qua, dopo il chdir cosi il file "infer" richiamato riesce a trovare le dipendenze
@@ -12,7 +11,7 @@ if __name__ == '__main__':
 
     # Variables to set for parser
     # Model path for inference
-    pathInference = '../_infer/models/train-n-100epoch.pt'
+    pathInference = '../_infer/models/best_ckpt.pt'
     # The path with the file to be evaluated
     pathEvalData = '../../Resources/infer_data/traffic1.mp4'
     # Path of train file
@@ -52,7 +51,7 @@ if __name__ == '__main__':
     parser.add_argument('--max-det', type=int, default=maxInfsXImage, help='maximal inferences per image.')
     parser.add_argument('--device', default=device, help='device to run our model i.e. 0 or 0,1,2,3 or cpu.')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt.')
-    parser.add_argument('--save-img', default=saveImage, action='store_false',
+    parser.add_argument('--not-save-img', default=not saveImage, action='store_false',
                         help='save visuallized inference results.')
     parser.add_argument('--save-dir', type=str, help='directory to save predictions in. See --save-txt.')
     parser.add_argument('--view-img', default=viewImage, action='store_true', help='show inference results')
