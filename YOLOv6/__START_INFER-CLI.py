@@ -37,7 +37,7 @@ if __name__ == '__main__':
     # saveImage
     saveImage = True
     # viewImage
-    viewImage = True
+    viewImage = False
 
     # Parser
     parser = argparse.ArgumentParser(description='YOLOv6 Inference', add_help=True)
