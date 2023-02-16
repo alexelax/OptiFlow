@@ -103,7 +103,8 @@ def  main():
             x1, y1, x2, y2 = int(result[0]),int(result[1]),int(result[2]),int(result[3])
             confidence = float(result[4])
             classNumber = int(result[5])
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+            #cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+            cv2.circle(frame,(int((x1+x2)/2),int((y1+y2)/2)),2,(255, 0, 0),2)
             cv2.putText(frame, f'{model.names[classNumber]} {confidence:.2f}', (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         
         # visualizzazione dell'immagine con i risultati

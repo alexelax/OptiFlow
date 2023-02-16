@@ -1,0 +1,42 @@
+OptiFlow
+
+
+10min / 15 slide max
+	problematica -> flusso /tempi  | inquinamento 
+	soluzione -> dinamico per gestire le tempistiche del semaforo in tempo reale
+	soluzioni esistenti -> taro i tempi fissi, fotocellula, ( telecamera taratura fissa ) 
+	proposta -> AI visione artificale, training specifico
+	risoluzione delle problematiche alle soluzioni esistenti 
+	open / espandibile -> API
+	possibili implementazioni -> infrazione semaforica (omologazione) | analisi dati ambientali
+	implementazione su struttura esistente / creazione scheda controller
+	schema di funzionamento 
+	conclusioni / prezzo->  proof of concept | 
+
+
+
+
+
+- preventivo
+	video in bn ris??? 
+				720p per traffico				
+				ALMENO 10780p per infrazione		- 4x400€ ( 1600€ )
+				palla								- 800€
+	Jetson Nano/TX2 4GB/ Google Coral Dev Board 	- 400€
+
+	scheda comunicazione 							-	???
+	hosting ecc										- da quantificare in base alle richieste
+	
+progetto in corso... -> R&D
+	interfaccia semaforo -> se il semaforo ha già un interfaccia ( documentata ) bene altrimenti cambiare scheda
+	https://www.allarmesatellitare.eu/automatismi/Schemi/Dispositivi/Semaf.Pl.Anem/SS-CES/SS-CES.htm
+	https://www.domotime.com/progettazione-e-realizzazione-di-schede-elettroniche/
+	
+	
+	
+
+pacchetti
+	- infrazione semaforica ( senza riconoscimento ) 
+	- analisi dati ambientali ( ??? ) 
+	
+	
