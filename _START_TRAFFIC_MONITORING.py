@@ -8,6 +8,8 @@
 import cv2
 import torch
 import time
+import numpy as np
+import math
 
 def resizeInWidth(frame,width):
     original_height, original_width = frame.shape[:2]
@@ -26,14 +28,103 @@ def concat_tile(im_list_2d):
     return cv2.vconcat([cv2.hconcat(im_list_h) for im_list_h in im_list_2d])
 
 
+    
 
+def showCrossroads(autos,semaphores):
+    """
+    aggiorna il pannello con la vista dell'incrocio
+
+    i dati sono passati in 2 vettori da 4 elementi in ordine
+    0 -> alto
+    1 -> destra
+    2 -> basso
+    3 -> sinistra
+
+    :param int[] autos: numeri di auto ad ogni strada
+    :param srt[] semaphores: v-g-r, stato del semaforo
+    """
+    w=300
+    h=300
+
+    
+    img = np.zeros((w,h,3), np.uint8)
+    cv2.rectangle(img,(0,0),(w,h),(255,255,255),-1)
+
+    verticalX = 150
+    orizzontalY = 150
+    streetSize=100
+    stopThickness=5
+    black=(0,0,0)
+    #alto
+    cv2.line(img,(int(verticalX-streetSize/2),0),(int(verticalX-streetSize/2),100),black,2)   #sx
+    cv2.line(img,(int(verticalX+streetSize/2),0),(int(verticalX+streetSize/2),100),black,2)   #dx
+
+    cv2.line(img,(verticalX,50),(verticalX,100),black,2)   #centro
+
+    cv2.rectangle(img,(int(verticalX-streetSize/2),100-stopThickness),(verticalX,100+1),black,-1) #stop
+
+
+
+    #destra
+    cv2.line(img,(200,int(orizzontalY-streetSize/2)),(300,int(orizzontalY-streetSize/2)),black,2) #dx
+    cv2.line(img,(200,int(orizzontalY+streetSize/2)),(300,int(orizzontalY+streetSize/2)),black,2) #sx
+    
+    cv2.line(img,(200,orizzontalY),(250,orizzontalY),black,2) #centro
+
+    cv2.rectangle(img,(200-1,int(orizzontalY-streetSize/2)),(200+stopThickness,orizzontalY),black,-1) #stop
+
+
+
+    #basso
+    cv2.line(img,(int(verticalX-streetSize/2),200),(int(verticalX-streetSize/2),300),black,2)   #sx
+    cv2.line(img,(int(verticalX+streetSize/2),200),(int(verticalX+streetSize/2),300),black,2)   #dx
+
+    cv2.line(img,(verticalX,200),(verticalX,250),black,2)   #centro
+
+    cv2.rectangle(img,(int(verticalX+streetSize/2),200+stopThickness),(verticalX,200-1),black,-1) #stop
+
+
+
+    #sinistra
+    cv2.line(img,(0,int(orizzontalY-streetSize/2)),(100,int(orizzontalY-streetSize/2)),black,2) #dx
+    cv2.line(img,(0,int(orizzontalY+streetSize/2)),(100,int(orizzontalY+streetSize/2)),black,2) #sx
+    
+    cv2.line(img,(50,orizzontalY),(100,orizzontalY),black,2)
+    
+    cv2.rectangle(img,(100+1,orizzontalY),(100-stopThickness,int(orizzontalY+streetSize/2)),black,-1) #stop
+   
+
+
+    #numeri auto
+    cv2.putText(img,str(autos[0]),(110, 75),cv2.FONT_HERSHEY_SIMPLEX,.8,black,1,cv2.LINE_AA)    #alto
+    cv2.putText(img,str(autos[1]),(210, 135),cv2.FONT_HERSHEY_SIMPLEX,.8,black,1,cv2.LINE_AA)   #destra
+    cv2.putText(img,str(autos[2]),(160, 230),cv2.FONT_HERSHEY_SIMPLEX,.8,black,1,cv2.LINE_AA)   #basso
+    cv2.putText(img,str(autos[3]),(65, 180),cv2.FONT_HERSHEY_SIMPLEX,.8,black,1,cv2.LINE_AA)    #sinistra
+
+
+    #semafori ( colori in BGR non RGB!)
+    colors={'v':(0,255,0),'r':(0,0,255)}
+    cv2.circle(img,(125, 115),10,colors[semaphores[0]],-1)  #alto
+    cv2.circle(img,(185, 125),10,colors[semaphores[1]],-1)  #destra
+    cv2.circle(img,(175, 185),10,colors[semaphores[2]],-1)  #basso
+    cv2.circle(img,(115, 175),10,colors[semaphores[3]],-1)  #sinistra
+
+    #cv2.line(img,(100,0),(100,100),(0,0,0),2)
+    cv2.imshow('crossroads', img)
 
 
 def  main():
 
+    cv2.namedWindow('Video')       
+    cv2.moveWindow('Video', 0,0)  
 
-
+    cv2.namedWindow('crossroads')       
+    cv2.moveWindow('crossroads', 700,0)  
     # Creazione del modello YOLOv5
+
+
+   
+    
     model = torch.hub.load('YOLOv5/YOLOv5_repo', 'custom', 'YOLOv5/_infer/best_n.pt', source='local')
 
 
@@ -93,23 +184,46 @@ def  main():
             )
         
 
+        
+
 
         # analisi del frame tramite YOLOv5
         results = model(frame)
         
-        
+
+        #DEBUG: recupero le dimensioni del frame ( per trovare contare le macchine )
+        original_height, original_width = frame.shape[:2]
+        original_height=int(original_height/2)
+        original_width =int(original_width/2)
+
+        autoNumbers=[ 0,0,0,0]
+
         # visualizzazione dei risultati sull'immagine
         for result in results.xyxy[0]:
             x1, y1, x2, y2 = int(result[0]),int(result[1]),int(result[2]),int(result[3])
+            xc,yc= int((x1+x2)/2),int((y1+y2)/2)
+
             confidence = float(result[4])
             classNumber = int(result[5])
             #cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-            cv2.circle(frame,(int((x1+x2)/2),int((y1+y2)/2)),2,(255, 0, 0),2)
+            cv2.circle(frame,(xc,yc),2,(255, 0, 0),2)
             cv2.putText(frame, f'{model.names[classNumber]} {confidence:.2f}', (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+            index=0
+            if( xc>original_width):
+                index=2
+            
+            if( yc>original_height):
+                index+=1
+
+
+            autoNumbers[index]+=1
         
         # visualizzazione dell'immagine con i risultati
         cv2.imshow('Video', frame)
 
+        #visualizzo l'incrocio
+        showCrossroads(autoNumbers,['v','r','v','r'])
         
     
         # interruzione con tasto 'q'
