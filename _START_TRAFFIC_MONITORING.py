@@ -5,6 +5,7 @@
 #visualizzare l'output con cv2
 
 
+import logging
 import cv2
 import torch
 import time
@@ -28,7 +29,6 @@ def concat_tile(im_list_2d):
     return cv2.vconcat([cv2.hconcat(im_list_h) for im_list_h in im_list_2d])
 
 
-    
 
 def showCrossroads(autos,semaphores):
     """
@@ -113,6 +113,122 @@ def showCrossroads(autos,semaphores):
     cv2.imshow('crossroads', img)
 
 
+class resultsIterV5:
+    def __init__(self, results):
+            self.results = results.xyxy[0]
+            self._results_size = len(self.results)
+            self._current_index = 0
+    def __iter__(self):
+        return self
+    def __next__(self):
+        if self._current_index < self._results_size:  
+            results=self.results
+            i=self._current_index
+            member =  int(results[i][0]),int(results[i][1]),int(results[i][2]),int(results[i][3]),float(results[i][4]),int(results[i][5])
+            self._current_index += 1
+            return member
+        raise StopIteration
+
+
+class resultsIterV8:
+
+    def _resetResulVariable(self):
+        self.boxes = self.results[0].boxes.xyxy.cpu().numpy()
+        self.probs = self.results[0].boxes.conf.cpu().numpy()
+        self.cls = self.results[0].boxes.cls.cpu().numpy()
+        self._boxes_size=len(self.boxes)
+
+
+    def __init__(self, results):
+            self.results = results
+            self._results_size = len(self.results)
+            self._current_result=0
+
+
+            if self._results_size != 0:
+                self._resetResulVariable()
+            self._current_boxes = 0
+
+
+    def __iter__(self):
+        return self
+    def __next__(self):
+        if self._current_result < self._results_size:  
+            
+            if self._current_boxes >= self._boxes_size:
+                self._current_boxes=0
+                self._current_result+= 1
+                if( self._current_result < self._results_size):
+                    self._resetResulVariable()
+                else:
+                    raise StopIteration
+            
+            i=self._current_boxes
+            member =  int(self.boxes[i][0]),int(self.boxes[i][1]),int(self.boxes[i][2]),int(self.boxes[i][3]),float(self.probs[i]),int(self.cls[i])
+            self._current_boxes += 1
+            return member
+        raise StopIteration
+
+
+class ModelCompatibilityLayerV5:
+    def __init__(self,folder,ptPath):
+        self.model = torch.hub.load(folder,'custom', ptPath, source='local')
+        
+    def __call__(self,frame):
+        return resultsIterV5(self.model(frame))
+    @property
+    def names(self):
+        return self.model.names
+        
+class ModelCompatibilityLayerV8:
+    def __init__(self,folder,ptPath):
+        from ultralytics.yolo.engine.model import YOLO
+
+        #toglie i log della v8
+        logging.disable(logging.CRITICAL)
+
+        #altro modo ( quello sopra toglie TUTTI i log, questo solo di ultralytics)
+        #logger = logging.getLogger('ultralytics')
+        #logger.disabled = True
+
+        self.model = YOLO('pts/yolov8/best_2023_02_19__20_57_20.pt',type="v8")
+        
+    def __call__(self,frame):
+        return resultsIterV8(self.model.predict(source=frame))
+    @property
+    def names(self):
+        return self.model.names
+
+
+
+
+def getFrame(caps):
+    """
+    prende i frame e ne fa il collage
+    caps è un vettori di VideoCapture
+     
+    """
+    frames=[]
+    for cap in caps:
+        ret, frame = cap.read()
+        if not ret:
+            return None
+        frame=resizeInWidth(frame,320)      # Resize the frames to the same size     ( la funzione può essere ottimizzata in base al flusso video )
+        frames.append(frame)
+
+
+    #collage frame
+    frame = concat_tile([
+        [frames[0],frames[1]],
+        [frames[2],frames[3]]]
+        )
+
+    return frame
+        
+
+
+
+
 def  main():
 
     cv2.namedWindow('Video')       
@@ -120,12 +236,12 @@ def  main():
 
     cv2.namedWindow('crossroads')       
     cv2.moveWindow('crossroads', 700,0)  
-    # Creazione del modello YOLOv5
 
 
-   
-    
-    model = torch.hub.load('YOLOv5/YOLOv5_repo', 'custom', 'YOLOv5/_infer/best_n.pt', source='local')
+
+    # Creazione del modello YOLO
+    model=ModelCompatibilityLayerV5('YOLOv5/YOLOv5_repo','pts/yolov5/best_n.pt')
+    #model=ModelCompatibilityLayerV8('YOLOv8/PARAMETRO_NON_USATO','pts/yolov8/best_2023_02_19__20_57_20.pt')
 
 
 
@@ -154,61 +270,46 @@ def  main():
     out.release()
     """
 
-    while True:
-        # Acquisizione di un frame del video
+    #butto il primo frame per prendere le dimensioni di ogni singolo flusso ( DA RIVEDERE IL RELEASE )
+    frame=getFrame(caps)
+    original_height, original_width = frame.shape[:2]
+    original_height=int(original_height/2)
+    original_width =int(original_width/2)
 
+    while True:
+
+
+       
         start_time = time.perf_counter()
 
 
 
-        
-        frames=[]
-        endVideo=False
-        for cap in caps:
-            ret, frame = cap.read()
-            if not ret:
-                endVideo=True
-                break
-            frame=resizeInWidth(frame,320)      # Resize the frames to the same size     ( la funzione può essere ottimizzata in base al flusso video )
-            frames.append(frame)
-            
-
-        if endVideo:
+        # Acquisizione di un frame dai video
+        frame=getFrame(caps)
+        if frame is None:
             break
 
         
-        #collage frame
-        frame = concat_tile([
-            [frames[0],frames[1]],
-            [frames[2],frames[3]]]
-            )
-        
-
-        
-
-
-        # analisi del frame tramite YOLOv5
+        # analisi del frame tramite YOLO
         results = model(frame)
-        
 
-        #DEBUG: recupero le dimensioni del frame ( per trovare contare le macchine )
-        original_height, original_width = frame.shape[:2]
-        original_height=int(original_height/2)
-        original_width =int(original_width/2)
+
 
         autoNumbers=[ 0,0,0,0]
 
         # visualizzazione dei risultati sull'immagine
-        for result in results.xyxy[0]:
-            x1, y1, x2, y2 = int(result[0]),int(result[1]),int(result[2]),int(result[3])
+        #for result in results.xyxy[0]:
+        for result in results:
+            x1, y1, x2, y2,confidence,classNumber = result
+
             xc,yc= int((x1+x2)/2),int((y1+y2)/2)
 
-            confidence = float(result[4])
-            classNumber = int(result[5])
+           
             #cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
             cv2.circle(frame,(xc,yc),2,(255, 0, 0),2)
             cv2.putText(frame, f'{model.names[classNumber]} {confidence:.2f}', (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
+            #metodo ( merdoso ) per identificare la posizione di una macchina e metterla nell'array 
             index=0
             if( xc>original_width):
                 index=2
@@ -218,7 +319,7 @@ def  main():
 
 
             autoNumbers[index]+=1
-        
+            
         # visualizzazione dell'immagine con i risultati
         cv2.imshow('Video', frame)
 
