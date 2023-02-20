@@ -4,7 +4,3 @@
 [submodule "YOLOv5/YOLOv5_repo"]
 	path = YOLOv5/YOLOv5_repo
 	url = https://github.com/ultralytics/yolov5.git
-[submodule "pts"]
-	path = pts
-	url = https://github.com/Smart-Traffic-Lights.git
-	branch = pts
