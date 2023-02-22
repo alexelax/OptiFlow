@@ -5,12 +5,11 @@
 #visualizzare l'output con cv2
 
 
-import logging
 import cv2
-import torch
 import time
 import numpy as np
-import math
+from compatibilityLayer import *
+
 
 def resizeInWidth(frame,width):
     original_height, original_width = frame.shape[:2]
@@ -113,93 +112,6 @@ def showCrossroads(autos,semaphores):
     cv2.imshow('crossroads', img)
 
 
-class resultsIterV5:
-    def __init__(self, results):
-            self.results = results.xyxy[0]
-            self._results_size = len(self.results)
-            self._current_index = 0
-    def __iter__(self):
-        return self
-    def __next__(self):
-        if self._current_index < self._results_size:  
-            results=self.results
-            i=self._current_index
-            member =  int(results[i][0]),int(results[i][1]),int(results[i][2]),int(results[i][3]),float(results[i][4]),int(results[i][5])
-            self._current_index += 1
-            return member
-        raise StopIteration
-
-
-class resultsIterV8:
-
-    def _resetResulVariable(self):
-        self.boxes = self.results[0].boxes.xyxy.cpu().numpy()
-        self.probs = self.results[0].boxes.conf.cpu().numpy()
-        self.cls = self.results[0].boxes.cls.cpu().numpy()
-        self._boxes_size=len(self.boxes)
-
-
-    def __init__(self, results):
-            self.results = results
-            self._results_size = len(self.results)
-            self._current_result=0
-
-
-            if self._results_size != 0:
-                self._resetResulVariable()
-            self._current_boxes = 0
-
-
-    def __iter__(self):
-        return self
-    def __next__(self):
-        if self._current_result < self._results_size:  
-            
-            if self._current_boxes >= self._boxes_size:
-                self._current_boxes=0
-                self._current_result+= 1
-                if( self._current_result < self._results_size):
-                    self._resetResulVariable()
-                else:
-                    raise StopIteration
-            
-            i=self._current_boxes
-            member =  int(self.boxes[i][0]),int(self.boxes[i][1]),int(self.boxes[i][2]),int(self.boxes[i][3]),float(self.probs[i]),int(self.cls[i])
-            self._current_boxes += 1
-            return member
-        raise StopIteration
-
-
-class ModelCompatibilityLayerV5:
-    def __init__(self,folder,ptPath):
-        self.model = torch.hub.load(folder,'custom', ptPath, source='local')
-        
-    def __call__(self,frame):
-        return resultsIterV5(self.model(frame))
-    @property
-    def names(self):
-        return self.model.names
-        
-class ModelCompatibilityLayerV8:
-    def __init__(self,folder,ptPath):
-        from ultralytics.yolo.engine.model import YOLO
-
-        #toglie i log della v8
-        logging.disable(logging.CRITICAL)
-
-        #altro modo ( quello sopra toglie TUTTI i log, questo solo di ultralytics)
-        #logger = logging.getLogger('ultralytics')
-        #logger.disabled = True
-
-        self.model = YOLO('pts/yolov8/best_2023_02_19__20_57_20.pt',type="v8")
-        
-    def __call__(self,frame):
-        return resultsIterV8(self.model.predict(source=frame))
-    @property
-    def names(self):
-        return self.model.names
-
-
 
 
 def getFrame(caps):
@@ -240,8 +152,8 @@ def  main():
 
 
     # Creazione del modello YOLO
-    model=ModelCompatibilityLayerV5('YOLOv5/YOLOv5_repo','pts/yolov5/best_n.pt')
-    #model=ModelCompatibilityLayerV8('YOLOv8/PARAMETRO_NON_USATO','pts/yolov8/best_2023_02_19__20_57_20.pt')
+    #model=ModelCompatibilityLayerV5('YOLOv5/YOLOv5_repo','pts/yolov5/best_n.pt')
+    model=ModelCompatibilityLayerV8('YOLOv8/PARAMETRO_NON_USATO','pts/yolov8/best_2023_02_19__20_57_20.pt')
 
 
 
