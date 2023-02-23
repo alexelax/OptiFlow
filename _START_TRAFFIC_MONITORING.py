@@ -5,11 +5,13 @@
 #visualizzare l'output con cv2
 
 
+import math
 import cv2
 import time
 import numpy as np
 from compatibilityLayer import *
-
+from SMA import SMA_sequence
+from shapely.geometry import polygon
 
 def resizeInWidth(frame,width):
     original_height, original_width = frame.shape[:2]
@@ -123,8 +125,13 @@ def getFrame(caps):
     frames=[]
     for cap in caps:
         ret, frame = cap.read()
+
         if not ret:
-            return None
+            #return None        -> chiude il programma
+            cap.set(cv2.CAP_PROP_POS_FRAMES,0)      #resetto il video da capo
+            ret, frame = cap.read()
+
+ 
         frame=resizeInWidth(frame,320)      # Resize the frames to the same size     ( la funzione può essere ottimizzata in base al flusso video )
         frames.append(frame)
 
@@ -153,7 +160,7 @@ def  main():
 
     # Creazione del modello YOLO
     #model=ModelCompatibilityLayerV5('YOLOv5/YOLOv5_repo','pts/yolov5/best_n.pt')
-    model=ModelCompatibilityLayerV8('YOLOv8/PARAMETRO_NON_USATO','pts/yolov8/best_2023_02_19__20_57_20.pt')
+    model=ModelCompatibilityLayerV8('YOLOv8/PARAMETRO_NON_USATO','pts/yolov8/best_2023_02_22__23_47_13.pt')
 
 
 
@@ -188,6 +195,8 @@ def  main():
     original_height=int(original_height/2)
     original_width =int(original_width/2)
 
+    avrSample=4
+    autoNumbersAvr=[ SMA_sequence(avrSample),SMA_sequence(avrSample),SMA_sequence(avrSample),SMA_sequence(avrSample)]
     while True:
 
 
@@ -209,14 +218,31 @@ def  main():
 
         autoNumbers=[ 0,0,0,0]
 
+        #TODO: vedere se basta usare i centri per vedere se non si "sovrappongono" oppure le bounding box
+        centers=[]
         # visualizzazione dei risultati sull'immagine
         #for result in results.xyxy[0]:
         for result in results:
             x1, y1, x2, y2,confidence,classNumber = result
-
             xc,yc= int((x1+x2)/2),int((y1+y2)/2)
 
-           
+
+            c=(xc,yc)
+            valid=True
+            for center in centers:
+                if math.dist(center, c)<10:          #10  = da definire
+                    valid=False
+                    break
+            if not valid:
+                continue
+            centers.append(c)
+
+
+
+            #TODO: implementare una maschera di selezione per determinare l'index della "corsia" della macchina ( e quelle che sono su corsie sbagliate)
+
+            
+
             #cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
             cv2.circle(frame,(xc,yc),2,(255, 0, 0),2)
             cv2.putText(frame, f'{model.names[classNumber]} {confidence:.2f}', (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
@@ -231,6 +257,13 @@ def  main():
 
 
             autoNumbers[index]+=1
+
+        
+        #aggiorno le medie delle macchine
+        for id,x in enumerate(autoNumbers):
+            autoNumbersAvr[id].AddValue(x)
+        #sostituisco il conteggio con la media
+        autoNumbers = [round(auto.current) for auto in autoNumbersAvr]
             
         # visualizzazione dell'immagine con i risultati
         cv2.imshow('Video', frame)
@@ -243,10 +276,15 @@ def  main():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-
+        
+        
         end_time = time.perf_counter()
         elapsed_time = end_time - start_time
         print (elapsed_time*1000)
+
+        #premere "c" per continuare con il frame successivo
+        #while not (cv2.waitKey(1) & 0xFF == ord('c')):
+        #    pass
 
 
     # rilascio del flusso video e della finestra
