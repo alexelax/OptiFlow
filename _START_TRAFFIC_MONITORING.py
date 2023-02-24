@@ -13,6 +13,10 @@ from compatibilityLayer import *
 from SMA import SMA_sequence
 from shapely.geometry import polygon
 
+#TODO: modificare tutti i rif di cv2 in questo modo ( dovrebbe essere più veloce)
+from cv2 import namedWindow as cv2_namedWindow
+from cv2 import moveWindow as cv2_moveWindow
+
 def resizeInWidth(frame,width):
     original_height, original_width = frame.shape[:2]
     # Set the desired width of the resized frame
@@ -115,6 +119,16 @@ def showCrossroads(autos,semaphores):
 
 
 
+start_time=0
+def ChronoInizio():
+    global start_time
+    start_time = time.perf_counter()
+
+def ChronoFine():
+    elapsed_time = time.perf_counter() - start_time
+    print (elapsed_time*1000)
+
+
 
 def getFrame(caps):
     """
@@ -150,11 +164,11 @@ def getFrame(caps):
 
 def  main():
 
-    cv2.namedWindow('Video')       
-    cv2.moveWindow('Video', 0,0)  
+    cv2_namedWindow('Video')       
+    cv2_moveWindow('Video', 0,0)  
 
-    cv2.namedWindow('crossroads')       
-    cv2.moveWindow('crossroads', 700,0)  
+    cv2_namedWindow('crossroads')       
+    cv2_moveWindow('crossroads', 700,0)  
 
 
 
@@ -201,7 +215,7 @@ def  main():
 
 
        
-        start_time = time.perf_counter()
+        ChronoInizio()
 
 
 
@@ -210,11 +224,14 @@ def  main():
         if frame is None:
             break
 
+       
+
         
         # analisi del frame tramite YOLO
         results = model(frame)
 
 
+        
 
         autoNumbers=[ 0,0,0,0]
 
@@ -237,7 +254,7 @@ def  main():
                 continue
             centers.append(c)
 
-
+            
 
             #TODO: implementare una maschera di selezione per determinare l'index della "corsia" della macchina ( e quelle che sono su corsie sbagliate)
 
@@ -264,23 +281,22 @@ def  main():
             autoNumbersAvr[id].AddValue(x)
         #sostituisco il conteggio con la media
         autoNumbers = [round(auto.current) for auto in autoNumbersAvr]
-            
+
+        
         # visualizzazione dell'immagine con i risultati
         cv2.imshow('Video', frame)
 
         #visualizzo l'incrocio
         showCrossroads(autoNumbers,['v','r','v','r'])
         
-    
+        
         # interruzione con tasto 'q'
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+        ChronoFine()    
         
         
-        end_time = time.perf_counter()
-        elapsed_time = end_time - start_time
-        print (elapsed_time*1000)
 
         #premere "c" per continuare con il frame successivo
         #while not (cv2.waitKey(1) & 0xFF == ord('c')):
