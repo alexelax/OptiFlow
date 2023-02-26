@@ -3,6 +3,20 @@ import torch
 
 
 
+class ModelCompatibilityLayerV5_TensorRT:
+    def __init__(self,folder,ptPath):
+        self.model = torch.hub.load(folder,'custom', ptPath,source='local')
+        #torch.hub.load('ultralytics/yolov5', 'custom', '/content/Smart-Traffic-Lights/yolov5/best_n.engine')  
+        
+    def __call__(self,frame):
+        return resultsIterV5(self.model(frame))
+    @property
+    def names(self):
+        return self.model.names
+
+    def val(self):
+        return self.val()
+
 class ModelCompatibilityLayerV5:
     def __init__(self,folder,ptPath):
         self.model = torch.hub.load(folder,'custom', ptPath, source='local')

@@ -174,8 +174,9 @@ def  main():
 
     # Creazione del modello YOLO
     #model=ModelCompatibilityLayerV5('YOLOv5/YOLOv5_repo','pts/yolov5/best_n.pt')
-    model=ModelCompatibilityLayerV8('YOLOv8/PARAMETRO_NON_USATO','pts/yolov8/best_2023_02_22__23_47_13.pt')
-
+    model=ModelCompatibilityLayerV5_TensorRT('YOLOv5/YOLOv5_repo','pts/yolov5/best_n.engine')       #da testare su linux ( install su win di tensorrt è un dito nel culo)
+    #model=ModelCompatibilityLayerV8('YOLOv8/PARAMETRO_NON_USATO','pts/yolov8/best_2023_02_22__23_47_13.pt')    
+    
 
 
     # Apertura del flusso video
