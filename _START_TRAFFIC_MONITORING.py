@@ -29,6 +29,23 @@ def resizeInWidth(frame,width):
 
     # Resize the frame
     return cv2.resize(frame, (width, desired_height))
+def resizeInHeigth(frame,height):
+    original_height, original_width = frame.shape[:2]
+    # Set the desired width of the resized frame
+
+    # Calculate the aspect ratio of the original frame
+    aspect_ratio = original_height / original_width
+
+    # Calculate the height of the resized frame
+    desired_width = int(height / aspect_ratio)
+
+    # Resize the frame
+    return cv2.resize(frame, (height, desired_width))
+def resize(frame,height,width):
+    # Resize the frame
+    return cv2.resize(frame, (height, width))
+
+
 
 def concat_tile(im_list_2d):
     return cv2.vconcat([cv2.hconcat(im_list_h) for im_list_h in im_list_2d])
@@ -147,6 +164,8 @@ def getFrame(caps):
 
  
         frame=resizeInWidth(frame,320)      # Resize the frames to the same size     ( la funzione può essere ottimizzata in base al flusso video )
+        #frame=resize(frame,320,320)      # sembra che onnx vuole entrambe le dim a 640
+
         frames.append(frame)
 
 
@@ -174,8 +193,15 @@ def  main():
 
     # Creazione del modello YOLO
     #model=ModelCompatibilityLayerV5('YOLOv5/YOLOv5_repo','pts/yolov5/best_n.pt')
-    model=ModelCompatibilityLayerV5_TensorRT('YOLOv5/YOLOv5_repo','pts/yolov5/best_n.engine')       #da testare su linux ( install su win di tensorrt è un dito nel culo)
+    #model=ModelCompatibilityLayerV5_TensorRT('YOLOv5/YOLOv5_repo','pts/yolov5/best_n.engine')       #TensorRT da testare su linux ( install su win di tensorrt è un dito nel culo)
     #model=ModelCompatibilityLayerV8('YOLOv8/PARAMETRO_NON_USATO','pts/yolov8/best_2023_02_22__23_47_13.pt')    
+    
+
+    #CPU
+    #model=ModelCompatibilityLayerV5('YOLOv5/YOLOv5_repo','pts/yolov5/best_n.onnx')       #TensorRT da testare su linux ( install su win di tensorrt è un dito nel culo)
+    #model=ModelCompatibilityLayerV5('YOLOv5/YOLOv5_repo','pts/yolov5/best_n_openvino_model/')
+
+    
     
 
 
