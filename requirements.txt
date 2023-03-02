@@ -1,8 +1,9 @@
 # YOLOv5 requirements
 # Usage: pip install -r requirements.txt
-
+setuptools>=65.5.1
+numba
 # Base ------------------------------------------------------------------------
-setuptools
+shapely
 gitpython>=3.1.30
 matplotlib>=3.2.2
 numpy>=1.24.2
@@ -13,8 +14,6 @@ PyYAML>=5.3.1
 requests>=2.23.0
 scipy>=1.4.1
 thop>=0.1.1  # FLOPs computation
-torch>=1.13.1  # see https://pytorch.org/get-started/locally (recommended)
-torchvision>=0.8.1
 tqdm>=4.64.0
 # protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
 
@@ -39,7 +38,6 @@ onnx-simplifier>=0.4.1  # ONNX simplifier
 openvino-dev  # OpenVINO export
 
 # Deploy ----------------------------------------------------------------------
-setuptools>=65.5.1 # Snyk vulnerability fix
 # tritonclient[all]~=2.24.0
 
 # Extras ----------------------------------------------------------------------
@@ -49,3 +47,4 @@ setuptools>=65.5.1 # Snyk vulnerability fix
 # pycocotools>=2.0.6  # COCO mAP
 roboflow
 ultralytics  # HUB https://hub.ultralytics.com
+IPython
