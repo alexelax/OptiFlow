@@ -4,14 +4,14 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
-        <sumocfg-file value="Ctest.sumocfg"/>
-        <additional-files value="test.add.xml"/>
-        <route-files value="test.rou.xml"/>
-        <sumo-net-file value="test.net.xml"/>
+        <sumocfg-file value="C:\Users\Luca\source\repos\SmartTrafficLight\Simulation\data2\test.sumocfg"/>
+        <additional-files value="C:\Users\Luca\source\repos\SmartTrafficLight\Simulation\data2\test.add.xml"/>
+        <route-files value="C:\Users\Luca\source\repos\SmartTrafficLight\Simulation\data2\test.rou.xml"/>
+        <sumo-net-file value="C:\Users\Luca\source\repos\SmartTrafficLight\Simulation\data2\test.net.xml"/>
     </input>
 
     <output>
-        <output-file value="test.net.xml"/>
+        <output-file value="C:\Users\Luca\source\repos\SmartTrafficLight\Simulation\data2\test.net.xml"/>
     </output>
 
     <processing>

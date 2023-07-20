@@ -2,9 +2,19 @@ import os
 import sys
 import traci
 
+
+laneDetectors=[
+    "E0_0D",
+    "E0_1D",
+    "-E4_0D",
+    "-E5_0D",
+    "E2_0D",
+    "E2_1D",
+    "-E1_0D",
+]
 def run_simulation(simulation_duration):
     # Path to the SUMO binary
-    sumo_binary = "sumo"
+    sumo_binary = "sumo-gui"
 
     # Path to the SUMO configuration file (.sumocfg)
     sumo_config_file = "data/test.sumocfg"
@@ -18,13 +28,14 @@ def run_simulation(simulation_duration):
         traci.simulationStep()
 
         # Replace "intersection_id" with the ID of the intersection you want to monitor
-        intersection_id = "intersection_id"
+        intersection_id = "J2"
 
         # Get the number of vehicles for each lane at the specified intersection
         num_vehicles_per_lane = {}
-        lanes = traci.trafficlight.getControlledLanes(intersection_id)
-        for lane in lanes:
+        #lanes = traci.trafficlight.getControlledLanes(intersection_id)
+        for lane in laneDetectors:
             num_vehicles_per_lane[lane] = traci.lanearea.getLastStepVehicleNumber(lane)
+            #TODO: c'è una giunzione a destra, devo trovare il modo di prendere quei veicoli??? bha
 
         # TODO: Implement your logic to interact with the traffic lights based on the current situation
 

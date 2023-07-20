@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!-- generated on 2023-03-03 13:02:15 by Eclipse SUMO netedit Version 1.16.0
+  <laneAreaDetector id="E5D" lane="E5" pos="0" endPos="10" file="bho.xml" />
+
 -->
 
 <additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+	<laneAreaDetector id="E0_0D" lane="E0_0" pos="0" endPos="70" file="bho.xml" />
+	<laneAreaDetector id="E0_1D" lane="E0_1" pos="0" endPos="70" file="bho.xml" />
+	<laneAreaDetector id="-E4_0D" lane="-E4_0" pos="0" endPos="74" file="bho.xml" />
+	<laneAreaDetector id="-E5_0D" lane="-E5_0" pos="0" endPos="70" file="bho.xml" />
+	<laneAreaDetector id="E2_0D" lane="E2_0" pos="0" endPos="20" file="bho.xml" />
+	<laneAreaDetector id="E2_1D" lane="E2_1" pos="0" endPos="20" file="bho.xml" />
+	<laneAreaDetector id="-E1_0D" lane="-E1_0" pos="128" endPos="148" file="bho.xml" />
 </additional>
