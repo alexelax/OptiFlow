@@ -1,1 +1,4 @@
-pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
+#old ( cuda 11.6 )
+#pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
+
+pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121

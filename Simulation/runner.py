@@ -37,6 +37,8 @@ from sumolib import checkBinary  # noqa
 import traci  # noqa
 
 
+
+#non dovrebbe servire in quanto è tutto all'interno del file di configurazione di sumo
 def generate_routefile():
     random.seed(42)  # make tests reproducible
     N = 3600  # number of time steps
