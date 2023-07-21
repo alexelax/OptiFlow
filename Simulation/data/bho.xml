@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2023-07-20 20:05:57 by Eclipse SUMO GUI Version 1.16.0
+<!-- generated on 2023-07-21 17:38:48 by Eclipse SUMO sumo Version 1.16.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="D:\source\repos\SmartTrafficLight\Simulation\data\test.net.xml"/>
-        <route-files value="D:\source\repos\SmartTrafficLight\Simulation\data\test.rou.xml"/>
-        <additional-files value="D:\source\repos\SmartTrafficLight\Simulation\data\test.add.xml"/>
+        <net-file value="data/test.net.xml"/>
+        <route-files value="data/test.rou.xml"/>
+        <additional-files value="data/test.add.xml"/>
         <junction-taz value="true"/>
     </input>
 
-</configuration>
--->
+    <traci_server>
+        <remote-port value="8814"/>
+    </traci_server>
 
-<detector xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/det_e2_file.xsd">
-</detector>
+</configuration>
