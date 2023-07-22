@@ -1,6 +1,6 @@
 from numba import cuda
 
-
+#o lanciare il comando "nvidia-smi" dal cmd
 cc_cores_per_SM_dict = {
     (2,0) : 32,
     (2,1) : 48,

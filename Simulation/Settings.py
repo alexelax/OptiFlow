@@ -32,6 +32,12 @@ class Settings:
         self.maxSimulationStep=7000      
 
         #ATTENZIONE! aggiungere una porta qua vuol dire anche aggiungere  un nuovo thread durante l'esecuzione
-        self.ports=[8813,8814,8815,8816]
+        #self.ports=[8813,8814,8815,8816]
+        self.ports=[8813]
 
+
+        self.neat_num_generations=10
+
+
+        self.random_seed=42
 
