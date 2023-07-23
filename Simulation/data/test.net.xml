@@ -124,12 +124,24 @@
     </edge>
 
     <tlLogic id="J2" type="static" programID="0" offset="0">
-        <phase duration="20" state="GGGrrrGGGrrr" next="1"/>
-        <phase duration="6"  state="yyyrrryyyrrr" next="2"/>
-        <phase duration="20" state="rrrrrGrrrrrG" next="3"/>
-        <phase duration="6"  state="rrrrryrrrrry" next="4"/>
-        <phase duration="40" state="rrrGGrrrrGGr" next="5"/>
+		<phase duration="10" state="rrrrrrrrrrrr" next="0"/>
+		
+		<phase duration="300" state="rrrGGrrrrGGr" next="2"/>
         <phase duration="6"  state="rrryyrrrryyr" next="0"/>
+		
+		<phase duration="300" state="rrrrrGrrrrrG" next="4"/>
+		<phase duration="6"  state="rrrrryrrrrry" next="0"/>
+		 
+        <phase duration="300" state="rrrrrrrrrGGG" next="6"/>
+        <phase duration="6" state="rrrrrrrrryyy" next="0"/>
+		
+		<phase duration="300" state="rrrGGGrrrrrr" next="8"/>
+        <phase duration="6" state="rrryyyrrrrrr" next="0"/>
+		
+		<phase duration="300" state="GGGrrrGGGrrr" next="10"/>
+        <phase duration="6"  state="yyyrrryyyrrr" next="0"/>
+		
+        
         <param key="barrier2Phases" value="2,6"/>
         <param key="barrierPhases" value="4,8"/>
         <param key="ring1" value="0,2,0,4"/>
