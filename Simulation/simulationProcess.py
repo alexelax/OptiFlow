@@ -19,20 +19,26 @@ class simulationProcess(Thread):
         # `args` and `kwargs` are stored as `self._args` and `self._kwargs`
         self.id = id
         self.network = network
-        self.Settings=Settings
+        self.settings=Settings
         self.retVal=None
         self.GUI=GUI
         self.port=port
-        
+        self.secondsFromStart=0
+        self.finish=False
 
     def run(self) :
         # prendo la porta da usare per la connessione tcp
 
-        self.retVal  = simulationProcess.simulate(self.id,   self.network,   self.Settings,port=self.port,GUI=self.GUI)
+        self.retVal  = self.simulate()
 
 
 
-    def simulate(id:int,   network,  settings:Settings,  port=None,GUI:bool=False):
+    def simulate(self):
+
+        network = self.network
+        settings = self.settings
+        port=self.port
+        GUI= self.GUI
 
         # Path to the SUMO binary
         sumo_binary = "sumo" 
@@ -48,8 +54,8 @@ class simulationProcess(Thread):
             port = util.getFreeTCPPort()
             
 
-        Singleton().print("SUMO ",id," - port: ",port)
-        sumo_cmd = [sumo_binary, "-c", sumo_config_file,"--remote-port", str(port),"--step-length",str(settings.step_length),"--no-warnings","true"]     
+        
+        sumo_cmd = [sumo_binary, "-c", sumo_config_file,"--remote-port", str(port),"--step-length",str(settings.step_length),"--no-warnings","true","--no-step-log","true"]     
         if GUI:  
             sumo_cmd.append("--start")
             sumo_cmd.append("--quit-on-end")
@@ -64,7 +70,7 @@ class simulationProcess(Thread):
         #sumo_process = traci.start(sumo_cmd)
         sumo = traci.connect(port)
 
-        Singleton().print("SUMO ",id," connesso")
+        
         vehicles={}
         
         pendingPhase=None
@@ -72,15 +78,37 @@ class simulationProcess(Thread):
         secondsFromAllRed=0
         secondsFromGreen=0
 
-        secondsFromStart=0
+        #secondsFromStart=0
+
+        laneState={
+            "E0_0":{"redTime":0, "lastState":"r","index":9},        #da sx -> dritto / gira in basso
+            "E0_1":{"redTime":0, "lastState":"r","index":11},        #da sx -> gira in alto
+            "-E4_0":{"redTime":0, "lastState":"r","index":6},       #da basso 
+            "-E5_0":{"redTime":0, "lastState":"r","index":0},       #da alto 
+            "E2_0":{"redTime":0, "lastState":"r","index":3},        #da destra -> dritto / gira in alto
+            "E2_1":{"redTime":0, "lastState":"r","index":5},        #da destra -> gira in basso
+        }
         # Main simulation loop
         while sumo.simulation.getMinExpectedNumber() > 0:
             sumo.simulationStep()
-            secondsFromStart+=settings.step_length
+            self.secondsFromStart+=settings.step_length
 
-            if secondsFromStart>settings.maxSimulationTime:
+            if self.secondsFromStart>settings.maxSimulationTime:
                 #termina
                 break
+            
+
+            signal_state = sumo.trafficlight.getRedYellowGreenState(settings.traffic.trafficLightID)
+            
+            for lane in laneState:
+                current = signal_state[ laneState[lane]["index"]]
+                if laneState[lane]["lastState"] == 'r': #se prima era rosso
+                    if current == 'r' :  #e adesso è rosso 
+                        laneState[lane]["redTime"]+=settings.step_length    #aumento il tempo
+                    elif  current == 'G' :      #se è verde
+                        laneState[lane]["redTime"]=0    #lo resetto
+
+                laneState[lane]["lastState"]=current
             
 
 
@@ -174,17 +202,30 @@ class simulationProcess(Thread):
                 if sensoreDestroAgg>0:
                     sensoreDestroAgg+=1
 
-                input_data=[]
-                input_data.append(num_vehicles_per_lane["E0_0D"])
-                input_data.append(num_vehicles_per_lane["E0_1D"])
-                input_data.append(num_vehicles_per_lane["-E4_0D"])
-                input_data.append(num_vehicles_per_lane["-E5_0D"])
-                input_data.append(num_vehicles_per_lane["E2_0D"] + sensoreDestroAgg/2)      #immagino che metà vanno dritti 
-                input_data.append(num_vehicles_per_lane["E2_1D"] + sensoreDestroAgg/2)      #e l'altra metà giri
+                input_data_numVehicle=[
+                    num_vehicles_per_lane["E0_0D"],
+                    num_vehicles_per_lane["E0_1D"],
+                    num_vehicles_per_lane["-E4_0D"],
+                    num_vehicles_per_lane["-E5_0D"],
+                    num_vehicles_per_lane["E2_0D"] + sensoreDestroAgg/2,      #immagino che metà vanno dritti 
+                    num_vehicles_per_lane["E2_1D"] + sensoreDestroAgg/2,      #e l'altra metà giri
+                ]
 
-                #TODO aggiungo per ogni lane i tempi di attesa ( da quanto tempo è rosso su quella lane )
+                input_data_numVehicle = simulationProcess.normalize(input_data_numVehicle)
 
 
+                input_data_redTime=[]
+                for lane in laneState:
+                    input_data_redTime.append(laneState[lane]["redTime"])
+
+                #input_data_redTime = simulationProcess.normalize(input_data_redTime)
+                input_data_redTime = simulationProcess.normalize(input_data_redTime,0,settings.maxSimulationTime)
+
+
+                input_data = np.concatenate((input_data_numVehicle, input_data_redTime))
+
+                #input_data =  np.random.rand(12)
+                #input_data=[ i for i in input_data ]
 
                 output = network.activate(input_data)
                 action=pd.Series(output).idxmax()
@@ -228,8 +269,21 @@ class simulationProcess(Thread):
 
         sumo.close()
 
-        
+        self.finish=True
         return (total_simulation_time, max_time_loss , avg)
          
 
-   
+
+
+    def normalize(data,min_val=None,max_val=None):
+
+        if min_val == None:
+            min_val = min(data)
+        if max_val == None:    
+            max_val = max(data)
+            
+        if min_val == max_val:
+            normalized_data = [.5]*len(data)
+        else:
+            normalized_data = [(x - min_val) / (max_val - min_val) for x in data]
+        return normalized_data

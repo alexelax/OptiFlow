@@ -15,6 +15,7 @@ def eval_genome(genome, config):
         net = neat.nn.FeedForwardNetwork.create(g, config)
         # Genera input casuali di dimensione 10
         input_data = np.random.rand(10)
+        #input_data = [ i for i in input_data]
         # Esegui la rete neurale e ottieni 4 output come probabilità
         output = net.activate(input_data)
         # Esempio: somma degli output per normalizzare in modo che abbiano una somma di 1 (probabilità)
@@ -32,7 +33,7 @@ def eval_genome(genome, config):
 #       il fitness più è alto meglio è
 
 
-config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation,'config-feedforward.ini')
+config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation,'_test-config-feedforward copy.ini')
 config.genome_config.seed = random_seed
 
 

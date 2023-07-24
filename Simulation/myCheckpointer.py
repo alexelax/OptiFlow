@@ -72,4 +72,4 @@ class myCheckpointer(BaseReporter):
         with gzip.open(filename) as f:
             generation, config, population, species_set, rndstate = pickle.load(f)
             random.setstate(rndstate)
-            return Population(config, (population, species_set, generation))
+            return Population(config, (population, species_set, generation+1))
