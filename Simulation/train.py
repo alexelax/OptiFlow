@@ -5,7 +5,7 @@ import numpy as np
 from Settings import Settings
 
 from myCheckpointer import myCheckpointer
-from simulationProcess import simulationProcess
+#from simulationProcess import simulationProcess
 import time
 from PortManager import *
 import pickle
@@ -14,11 +14,14 @@ import os
 from ColorTextLib import *
 import math
 import visualize
-
+from simulationProcess_multiprocess import simulationProcess
+from multiprocessing import Process, Manager,Value
 
 settings = Settings()
 portManager = PortManager(threading.Lock())
 portManager.addPort(settings.ports)
+
+
 
 
 def printMatrix(matrix,length=None):
@@ -52,8 +55,8 @@ def toString(genomes,processes,deleteBefore=True):
             tmp[genome_id]["fit"]="{:.4f}".format(g.fitness)
 
     for p in processes:
-        tmp[p["genome_id"]]["time"]=p["process"].secondsFromStart
-        tmp[p["genome_id"]]["status"]="r" if not p["process"].finish else "f"
+        tmp[p["genome_id"]]["time"]=p["secondsFromStart"].value #p["process"].secondsFromStart
+        tmp[p["genome_id"]]["status"]="r" if not p["finish"] else "f"
         tmp[p["genome_id"]]["port"]="r" if not p["process"].port else p["process"].port
 
     def initMatrix():
@@ -121,11 +124,14 @@ def toString(genomes,processes,deleteBefore=True):
     #fit:       1   2   3   50
     #port       813 814 815 816
 
-    
+manager = None 
+
 def eval_genome(genome, config):
 
     genomeToTest = [ (genome_id, g) for  genome_id, g in genome]
 
+    
+    
 
     processesRunning=[]
     processesAll=[]
@@ -145,13 +151,17 @@ def eval_genome(genome, config):
                 port= portManager.lockPort()
                 genome_id, g=genomeToTest.pop()
                 net = neat.nn.FeedForwardNetwork.create(g, config)  
-                proc =simulationProcess(genome_id,net,settings,port=port,GUI=False)
+                retVal = manager.dict()
+                secondsFromStart = Value('f', 0.0)
+                proc =simulationProcess(genome_id,net,settings,port=port,GUI=False,secondsFromStart=secondsFromStart,args=(retVal))
                 simData={
                         "port":port,
                         "process":proc,
                         "genome":g,
-                        "genome_id":genome_id
-
+                        "genome_id":genome_id,
+                        "retVal":retVal,
+                        "secondsFromStart":secondsFromStart,
+                        "finish":False
                     }
 
                 processesRunning.append(simData)
@@ -173,7 +183,11 @@ def eval_genome(genome, config):
 
         for p in processesJustEnd:
             
-            total_simulation_time, max_time_loss , avg=p["process"].retVal
+            #total_simulation_time, max_time_loss , avg=p["process"].retVal
+            total_simulation_time, max_time_loss , avg = p["retVal"]["total_simulation_time"],p["retVal"]["max_time_loss"],p["retVal"]["avg"]
+            p["finish"]=True
+
+
             g=p["genome"]
 
             portManager.releasePort(p["port"])
@@ -195,6 +209,11 @@ def eval_genome(genome, config):
             
             g.fitness = fitness
             #print("Genome: ",p["genome_id"], " - fitness: ", fitness)
+
+
+            #se qualche processo ha finito, vuol dire che ci sono posti liberi e aspetto poco
+            sleepTime=0.1
+
 
       
         time.sleep(sleepTime)
@@ -251,6 +270,7 @@ def eval_genome(genome, config):
 
 def main():
 
+    
     OnlyRunWinner=False
 
     
@@ -258,42 +278,28 @@ def main():
     np.random.seed(settings.random_seed)
 
 
-    
-
-
-    # Configurazione NEAT
-    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation,settings.neat_config_ini)
-    config.genome_config.seed = settings.random_seed
-    
-    assert config.genome_config.num_outputs==len(settings.traffic.trafficLightPhases), "Numero di ouput nel 'config.ini' non corrisponde al numero di 'trafficLightPhases' nei settings"
-    
-
-
-    
-    # Personalizzazione della struttura della rete neurale
-
-    # Aggiungi layer nascosti (se necessario)
-    #config.genome_config.add_hidden_layer(5)  # Aggiunge un layer nascosto con 5 nodi
-    
-    
-
-
-
 
     if os.path.exists(settings.checkPointPath):
         population = myCheckpointer.restore_checkpoint(settings.checkPointPath)
-        
+        config = population.config
+
     else:
+        # Configurazione NEAT
+        config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation,settings.neat_config_ini)
+        config.genome_config.seed = settings.random_seed
+        
         # Creazione del popolazione di reti neurali
         population = neat.Population(config)
 
-    
+    assert config.genome_config.num_outputs==len(settings.traffic.trafficLightPhases), "Numero di ouput nel 'config.ini' non corrisponde al numero di 'trafficLightPhases' nei settings"
+        
+
 
     # Report sui progressi dell'addestramento
     population.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     population.add_reporter(stats)
-    population.add_reporter(myCheckpointer(1, 5,settings.checkPointPath))
+    population.add_reporter(myCheckpointer(1, 5,settings.checkPointPath))   #reporter per salvare la rete neurale
     
     winner=None
 
@@ -341,39 +347,10 @@ def main():
     print("max_time_loss: ",max_time_loss)
     print("avg: ",avg)
 
-    exit()
 
-    processes=[]
-
-    #sharedList=multiprocessing.Manager().list()
-    #sharedList.append(portManager)
-    # Create a separate process for each simulation
-    for i in range(0,2):
-        processes.append(simulationProcess(portManager,i,None,settings))
-    
-
-    # Start both processes in parallel
-    for p in processes:
-        p.start()
-
-
-    while True:
-        finish=True
-        time.sleep(1)
-        for p in processes:
-            if p.is_alive():
-                finish=False
-        if finish:
-            break
-
-    # Wait for both processes to finish
-    #process1.join()
-    #process2.join()
-
-    for p in processes:
-        print(p.retVal)
 
    
 
 if __name__ == "__main__":
+    manager= Manager()
     main()

@@ -14,7 +14,7 @@ class Settings:
 
         self.neat_num_generations=300
         #tempo ( secondi ) massimi prima di terminare la simulazione 
-        self.maxSimulationTime=360*3      #il doppio del tempo teorico della simulaizone...       
+        self.maxSimulationTime=360*2      #il doppio del tempo teorico della simulaizone...       
 
         #ATTENZIONE! aggiungere una porta qua vuol dire anche aggiungere  un nuovo thread durante l'esecuzione
         self.ports=[
@@ -23,8 +23,8 @@ class Settings:
             8853, 8854, 8855, 8856, 8857, 8858, 8859, 8860, 8861, 8862, 8863, 8864, 8865, 8866, 8867, 8868, 8869, 8870, 8871, 8872, 
         ]   #60
         #self.ports=[8813]
-
-
+        self.ports=[ 8813,8814,8815,8816,8817,8818,8819,8820,8821,8822,8823,8824]       #multiprocessing
+        #self.ports=[ 8813,8814,8815]
         
 
 
