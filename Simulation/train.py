@@ -73,8 +73,9 @@ def toString(genomes,processes,deleteBefore=True):
     #pulisco quelle prima
     if deleteBefore:
         numBlock=math.ceil(len(tmp)/maxElPerRow)
+       
         rowPerBlock=4
-        numLines=(numBlock*rowPerBlock)+(numBlock-1)        #(numBlock-1)  -> per cancellare le linee vuote
+        numLines=(numBlock*rowPerBlock)+(numBlock)        #(numBlock)  -> per cancellare le linee vuote
         cursor_up = '\x1b[1A'
         erase_line = '\x1b[2K'
         print(((cursor_up + erase_line)*numLines) +cursor_up)
@@ -108,14 +109,9 @@ def toString(genomes,processes,deleteBefore=True):
 
     if len(pMatrix[0])>1:
         printMatrix(pMatrix,6)
+        print("")
    
-    """cursor_up = '\x1b[1A'
-    erase_line = '\x1b[2K'
-    print("hi\nyou\nthere\nletstry!")
-    print((cursor_up + erase_line)*4 +cursor_up)
-    print("hi\nyou\nthere\nletstry!")"""
 
-    
 
 
     #esempio
@@ -137,8 +133,15 @@ def eval_genome(genome, config):
     while len(genomeToTest) > 0 or len(processesRunning)>0:
         port=None
 
+        sleepTime=1
+
         if len(genomeToTest)>0: #se ce ne sono ancora
-            if portManager.getFreeCount() > 0:
+            freeCount=portManager.getFreeCount()
+            #se ho più di un posto, allora diminuisco lo sleep per riempire più velocemente
+            if freeCount > 1:   
+                sleepTime=0.1
+
+            if freeCount > 0:
                 port= portManager.lockPort()
                 genome_id, g=genomeToTest.pop()
                 net = neat.nn.FeedForwardNetwork.create(g, config)  
@@ -154,6 +157,10 @@ def eval_genome(genome, config):
                 processesRunning.append(simData)
                 processesAll.append(simData)
                 proc.start()
+
+            
+
+                
 
            
         #controllo i processi 
@@ -190,7 +197,7 @@ def eval_genome(genome, config):
             #print("Genome: ",p["genome_id"], " - fitness: ", fitness)
 
       
-        time.sleep(1)
+        time.sleep(sleepTime)
         if justStarted:
             justStarted=False
             toString(genome,processesAll,False)
@@ -257,7 +264,7 @@ def main():
     # Configurazione NEAT
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,neat.DefaultSpeciesSet, neat.DefaultStagnation,settings.neat_config_ini)
     config.genome_config.seed = settings.random_seed
-
+    
     assert config.genome_config.num_outputs==len(settings.traffic.trafficLightPhases), "Numero di ouput nel 'config.ini' non corrisponde al numero di 'trafficLightPhases' nei settings"
     
 
