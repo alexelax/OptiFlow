@@ -3,7 +3,6 @@ import threading
 import neat
 import numpy as np
 from Settings import Settings
-
 from myCheckpointer import myCheckpointer
 #from simulationProcess import simulationProcess
 import time
@@ -14,7 +13,7 @@ import os
 from ColorTextLib import *
 import math
 import visualize
-from simulation import SimulationProcess,Simulation,SimulationThread
+from simulation import SimulationProcess,SimulationAI,SimulationThread
 from multiprocessing import Process, Manager,Value
 
 settings = Settings()
@@ -132,6 +131,7 @@ def eval_genome(genome, config):
     processesRunning=[]
     processesAll=[]
     justStarted=True
+    
     while len(genomeToTest) > 0 or len(processesRunning)>0:
         port=None
 
@@ -149,8 +149,10 @@ def eval_genome(genome, config):
                 net = neat.nn.FeedForwardNetwork.create(g, config)  
                 retVal = manager.dict()
                 secondsFromStart = Value('f', 0.0)
-                proc =SimulationProcess(genome_id,net,settings,port=port,GUI=False,args=(retVal,secondsFromStart))  
-                #proc =SimulationThread(genome_id,net,settings,port=port,GUI=False,args=(retVal,secondsFromStart))  
+
+                
+                proc =settings.SimulationParallelClass(genome_id,net,settings,port=port,GUI=False,args=(retVal,secondsFromStart))  
+
 
                 simData={
                         "port":port,
@@ -189,22 +191,9 @@ def eval_genome(genome, config):
 
             portManager.releasePort(p["port"])
             
-            fitness=0   #più è alto, meglio è 
-
-            if total_simulation_time>=settings.maxSimulationTime:
-                fitness=0
-            elif avg==0:
-                fitness=1   #perfetto, nessuno ha perso tempo
-            else:
-
-
-                fitness=1/((avg+max_time_loss)/2)
-
-                #incluso anche il max_time_loss ->  media tra l'avg e il max_time_loss
-                #oppure aggiungere delle penalità più è alta la differenza tra avg e max_time_loss
-                #oppure escludere direttamente qualsiasi generazione che ha un max_time_loss troppo alto ( tipo il doppio / triplo dell'avg)
+           
             
-            g.fitness = fitness
+            g.fitness = fitness(total_simulation_time,max_time_loss,avg,settings)
            
 
             #se qualche processo ha finito, vuol dire che ci sono posti liberi e aspetto poco
@@ -219,9 +208,20 @@ def eval_genome(genome, config):
         else:
             toString(genome,processesAll)
 
-    
 
+def fitness(total_simulation_time,max_time_loss,avg,settings:Settings):
 
+    #più il valore è alto, più vuol dire che sta andando bene ( controllare nell'ini il fitness_threshold, ovvero il valore considerato "massimo" del fitness )
+    if total_simulation_time>=settings.maxSimulationTime:
+        fitness=0
+    elif avg==0:
+        fitness=1   #perfetto, nessuno ha perso tempo
+    else:
+        fitness=1/((avg+max_time_loss)/2)
+        #incluso anche il max_time_loss ->  media tra l'avg e il max_time_loss
+        #oppure aggiungere delle penalità più è alta la differenza tra avg e max_time_loss
+        #oppure escludere direttamente qualsiasi generazione che ha un max_time_loss troppo alto ( tipo il doppio / triplo dell'avg)
+    return fitness
 
 def main():
 
@@ -281,7 +281,7 @@ def main():
 
 
     node_names = {-1: 'E0_0D', -2: 'E0_1D',-3: '-E4_0D',-4: '-E5_0D',-5: 'E2_0D',-6: 'E2_1D',-7: 'T1',-8: '-T2',-9: 'T3',-10: 'T4',-11: 'T5',-12: 'T6', 0: 'Phase 1',1: 'Phase 3',2: 'Phase 5',3: 'Phase 7',4: 'Phase 9'}
-    visualize.draw_net(config, winner,True, filename="__deleteMe" ,node_names=node_names)
+    #visualize.draw_net(config, winner,True, filename="__deleteMe" ,node_names=node_names)
     #visualize.draw_net(config, winner, True, node_names=node_names, prune_unused=True)
     
 
@@ -293,16 +293,22 @@ def main():
     # Utilizzare il vincitore per effettuare predizioni
     winner_net = neat.nn.FeedForwardNetwork.create(winner, population.config)
     
-    caller = SimulationProcess(winner.key,winner_net,settings,GUI=True,args=(None,None))
-    total_simulation_time, max_time_loss , avg=Simulation.simulate(caller)      #lo avvio su questo thread
+
+    caller = SimulationThread(winner.key,winner_net,settings,GUI=True,args=(manager.dict(),None))
+    total_simulation_time, max_time_loss , avg=caller.runAndWait()      
+
+
     print("total_simulation_time: ",total_simulation_time)
     print("max_time_loss: ",max_time_loss)
     print("avg: ",avg)
+    print("fitness: ",fitness(total_simulation_time,max_time_loss,avg,settings) )
+
 
 
 
    
 
 if __name__ == "__main__":
+
     manager= Manager()
     main()

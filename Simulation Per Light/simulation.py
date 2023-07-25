@@ -4,7 +4,7 @@ from PortManager import PortManager
 import time
 from Settings import Settings
 import traci
-from multiprocessing import Process, Value
+from multiprocessing import Process, Manager,Value
 from threading import Thread
 import os 
 import neat
@@ -13,11 +13,15 @@ from util import util
 import pandas as pd
 
 
-
-
-class SimulationThread(Thread):
-
-    def __init__(self, id:int,network:neat.nn.FeedForwardNetwork,Settings,port=None, name=None, args=(), kwargs={}, daemon=None,GUI:bool=False):
+class SimulationParallel():
+    def __init__(
+            self, id:int,
+            network:neat.nn.FeedForwardNetwork,
+            settings,
+            port=None,
+            GUI:bool=False,
+            name=None, args=(), kwargs={}, daemon=None
+            ):
         super().__init__( group=None, name=name, args=args, kwargs=kwargs, daemon=daemon )
         # `args` and `kwargs` are stored as `self._args` and `self._kwargs`
         
@@ -25,10 +29,10 @@ class SimulationThread(Thread):
         
         self.id = id
         self.network = network
-        self.settings=Settings
+        self.settings=settings
         self.retVal=args[0]
         if self.retVal == None:
-            self.retVal= {}         #dizionario non gestito da un manager ma fa niente
+            self.retVal= Manager().dict()        
 
         self.GUI=GUI
         self.port=port
@@ -42,59 +46,74 @@ class SimulationThread(Thread):
     def getSecondFromStart(self):
         return self.secondsFromStart.value
 
+    
+    def runAndWait(self):
+        self.start()
+        self.join()
+        return (self.retVal["total_simulation_time"],self.retVal["max_time_loss"],self.retVal["avg"])
 
-    def run(self) :
-        ret  = Simulation.simulate(self)
+
+class SimulationThread(SimulationParallel,Thread):
+    def __init__(self, id:int,
+            network:neat.nn.FeedForwardNetwork,
+            settings:Settings,
+            port=None,
+            GUI:bool=False,
+            name=None, args=()):  
+        super().__init__(id,network,settings,port=port,GUI=GUI,name=name,args=args)
+        self.settings : Settings
+        
+
+    def run(self):
+        ret  = self.settings.SimulationEngine.simulate(self)
 
         self.retVal["total_simulation_time"]=ret[0]
         self.retVal["max_time_loss"]=ret[1]
         self.retVal["avg"]=ret[2]
 
 
-class SimulationProcess(Process):
 
-    def __init__(self, id:int,network:neat.nn.FeedForwardNetwork,Settings,port=None, name=None, args=(), kwargs={}, daemon=None,GUI:bool=False):
-        super().__init__( group=None, name=name, args=args, kwargs=kwargs, daemon=daemon )
-        # `args` and `kwargs` are stored as `self._args` and `self._kwargs`
+class SimulationProcess(SimulationParallel,Process):
+    def __init__(self, id:int,
+            network:neat.nn.FeedForwardNetwork,
+            settings:Settings,
+            port=None,
+            GUI:bool=False,
+            name=None, args=()):  
+        super().__init__(id,network,settings,port=port,GUI=GUI,name=name,args=args)
+        self.settings : Settings
         
-        assert len(args) == 2, "passare 2 parametri ad args: un manager.dict() ( usato per il ritorno dei valori) e Value('f', 0.0) ( usata per aggiornare il tempo della simulazione ) "
-        
-        self.id = id
-        self.network = network
-        self.settings=Settings
-        self.retVal=args[0]
-        if self.retVal == None:
-            self.retVal= {}         #dizionario non gestito da un manager ma fa niente
 
-        self.GUI=GUI
-        self.port=port
-        self.secondsFromStart=args[1]
-        if self.secondsFromStart == None:
-            self.secondsFromStart = Value('f',0.0)
-
-    def setSecondFromStart(self,sec):
-        self.secondsFromStart.value=sec
-
-    def getSecondFromStart(self):
-        return self.secondsFromStart.value
-
-
-    def run(self) :
-
-        ret  = Simulation.simulate(self)
+    def run(self):
+        ret  = self.settings.SimulationEngine.simulate(self)
 
         self.retVal["total_simulation_time"]=ret[0]
         self.retVal["max_time_loss"]=ret[1]
         self.retVal["avg"]=ret[2]
 
+
+
+
+class SimulationAgent_AI:
+    def __init__(self,setting: Settings) -> None:
+        self.setting=setting
+        
+    def run(data):
+        #ritorna un array di priorità per ogni lane
+        pass
+
+class SimulationAgent_HAND:
+    def __init__(self,setting: Settings) -> None:
+        self.setting=setting
+        
+    def run(data):
+        pass 
 
 
 class Simulation: 
-
-    def simulate(callerClass:SimulationProcess | SimulationThread):
+    def simulate(callerClass:SimulationProcess | SimulationThread, simulationAgent: SimulationAgent_AI | SimulationAgent_HAND):
         self=callerClass
 
-        network = self.network
         settings = self.settings
         port=self.port
         GUI= self.GUI
@@ -138,26 +157,28 @@ class Simulation:
 
 
         laneState={
-            "E0_0":{"redTime":0, "lastState":"r","index":9},        #da sx -> dritto / gira in basso
-            "E0_1":{"redTime":0, "lastState":"r","index":11},        #da sx -> gira in alto
-            "-E4_0":{"redTime":0, "lastState":"r","index":6},       #da basso 
-            "-E5_0":{"redTime":0, "lastState":"r","index":0},       #da alto 
-            "E2_0":{"redTime":0, "lastState":"r","index":3},        #da destra -> dritto / gira in alto
-            "E2_1":{"redTime":0, "lastState":"r","index":5},        #da destra -> gira in basso
+            "E0_0":{"redTime":0, "lastState":"r","index":9,"numVehicle":0},        #da sx -> dritto / gira in basso
+            "E0_1":{"redTime":0, "lastState":"r","index":11,"numVehicle":0},        #da sx -> gira in alto
+            "-E4_0":{"redTime":0, "lastState":"r","index":6,"numVehicle":0},       #da basso 
+            "-E5_0":{"redTime":0, "lastState":"r","index":0,"numVehicle":0},       #da alto 
+            "E2_0":{"redTime":0, "lastState":"r","index":3,"numVehicle":0},        #da destra -> dritto / gira in alto
+            "E2_1":{"redTime":0, "lastState":"r","index":5,"numVehicle":0},        #da destra -> gira in basso
         }
-        # Main simulation loop
+
+
+
+        maxRedTime=60   #secondi massimi per il semaforo rosso 
+
         while sumo.simulation.getMinExpectedNumber() > 0:
             sumo.simulationStep()
 
+            #controllo se ci mette troppo -> termino
             self.setSecondFromStart(self.getSecondFromStart()+settings.step_length)
-
             if self.getSecondFromStart()>settings.maxSimulationTime:
-                #termina
-                break
+                break      
             
-
-            signal_state = sumo.trafficlight.getRedYellowGreenState(settings.traffic.trafficLightID)
-            
+            #vedo lo stato attuale e modifico i tempi di rosso dei vari semafori
+            signal_state = sumo.trafficlight.getRedYellowGreenState(settings.traffic.trafficLightID)            
             for lane in laneState:
                 current = signal_state[ laneState[lane]["index"]]
                 if laneState[lane]["lastState"] == 'r': #se prima era rosso
@@ -169,30 +190,38 @@ class Simulation:
                 laneState[lane]["lastState"]=current
             
 
-
-            # Get the number of vehicles for each lane at the specified intersection
+            #recupero il numero di veicoli per lane 
             num_vehicles_per_lane = {}
-            #lanes = traci.trafficlight.getControlledLanes(intersection_id)
-            for lane in settings.traffic.laneDetectors:
-                num_vehicles_per_lane[lane] = sumo.lanearea.getLastStepVehicleNumber(lane)
-
-
-
-
-
-            #light_definition=sumo.trafficlight.getAllProgramLogics(settings.traffic.trafficLightID)
-            #currentPhase= light_definition[0].currentPhaseIndex
-            currentPhase=sumo.trafficlight.getPhase(settings.traffic.trafficLightID)        #altro modo
-
-            #allPhase= light_definition[0].getPhases()
-
-
-            for vehicle_id in sumo.vehicle.getIDList():
-
-                #waiting_time dovrebbe essere il tempo perso fermo
-                #waiting_time = traci.vehicle.getAccumulatedWaitingTime(vehicle_id)
+            for detector in settings.traffic.laneDetectors:
+                lane=settings.traffic.laneDetectors[detector]["lane"]
+                num_vehicles_per_lane[lane] = sumo.lanearea.getLastStepVehicleNumber(detector)
                 
-                #time_loss, considerando il tempo ottimale per la tratta, è il tempo perso tra stare fermo e i rallentamenti ( non ha problemi di salvataggio)
+
+            for lane in laneState:
+                laneState[lane]["numVehicle"]=num_vehicles_per_lane[lane]
+
+            #aggiustamento per un sensore
+            sensoreDestroAgg=num_vehicles_per_lane["-E1_0"]
+            if sensoreDestroAgg>0:
+                sensoreDestroAgg+=1
+            laneState["E2_0"]["numVehicle"] += sensoreDestroAgg/2    #immagino che metà vanno dritti 
+            laneState["E2_1"]["numVehicle"] += sensoreDestroAgg/2    #e l'altra metà giri
+
+
+            #TODO: ottimizzabile se ristrutturo i 2 pezzi di codice precendete
+            #se ci sono 0 auto su una lane, porto a 0 il tempo del rosso ( non c'è nessuna auto in attesa!! )
+            for lane in laneState:
+                if laneState[lane]["numVehicle"]==0:        
+                    laneState[lane]["redTime"]=0
+
+
+
+
+            #Phase corrente del semaforo
+            currentPhase=sumo.trafficlight.getPhase(settings.traffic.trafficLightID)    
+
+            #aggiorno i tempi persi per ogni veicolo
+            for vehicle_id in sumo.vehicle.getIDList():
                 time_loss=sumo.vehicle.getTimeLoss(vehicle_id)
                 vehicles[vehicle_id]=time_loss
 
@@ -200,12 +229,11 @@ class Simulation:
             #--------------- LOGICA ---------------
             #-------------------------------------
             #se sono in "rosso" e non c'è nessuno stato da attivare 
-                # NN
+                # ALGORITMO
 
             #sono in "rosso" (  settings.traffic.stateIndex_Red ) e c'è uno stato da attivare 
-                #controllo se sono passati settings.traffic.redAllSeconds dalla passaggio a allRed (  settings.traffic.stateIndex_Red )
-                    #si -> imposto lo stato in "pending"
-                    #no -> attendo 
+                #si -> imposto lo stato che c'è in "pending"
+                    
                 
             #se sono in "giallo" ( ovvero in un indice successivo a tutti quelli prensenti dentro settings.traffic.trafficLightStates / quindi NON presente nella lista)
                 #attendo -> in automatico dovrebbe andare a rosso e di conseguenza andare nel punto 1/2
@@ -214,15 +242,18 @@ class Simulation:
                 # se sono passati MENO di settings.traffic.minTimeBeforeChange
                     #attendo -> per "sicurezza" non posso cambiare troppo spesso il semaforo quindi devo aspettare
                 # se sono passati PIU di settings.traffic.minTimeBeforeChange
-                    # NN
+                    # ALGORITMO
 
             
-            #se ho lavorato con la NN
-                #se la NN da una action che porta ad uno stato UGUALE a quello attuale 
+            #se ho lavorato con la ALGORITMO
+                #se la ALGORITMO da una action che porta ad uno stato UGUALE a quello attuale 
                     #non faccio niente
                 # ...................................... stato DIVERSO da quello attuale 
                     #imposto il giallo ( stato successivo al corrente ) e imposto nel "pending" lo stato da impostare                     
                     
+
+
+
 
 
             toNN=False
@@ -254,41 +285,56 @@ class Simulation:
 
             if toNN:
                 
-                #input_data = np.random.rand(len(network.input_nodes))     #TODO: sostituire con dati reali!
-
-                sensoreDestroAgg=num_vehicles_per_lane["E2_0D"]
-                if sensoreDestroAgg>0:
-                    sensoreDestroAgg+=1
-
-                input_data_numVehicle=[
-                    num_vehicles_per_lane["E0_0D"],
-                    num_vehicles_per_lane["E0_1D"],
-                    num_vehicles_per_lane["-E4_0D"],
-                    num_vehicles_per_lane["-E5_0D"],
-                    num_vehicles_per_lane["E2_0D"] + sensoreDestroAgg/2,      #immagino che metà vanno dritti 
-                    num_vehicles_per_lane["E2_1D"] + sensoreDestroAgg/2,      #e l'altra metà giri
-                ]
-
-                input_data_numVehicle = Simulation.normalize(input_data_numVehicle)
-
-
-                input_data_redTime=[]
+                #recupero il numero di veicoli per lane e li normalizzo
+                input_data_numVehicle=[ laneState[lane]["numVehicle"] for lane in laneState ]
+                input_data_numVehicle = SimulationUtil.normalize(input_data_numVehicle,min_val=0)
+                i=0
                 for lane in laneState:
-                    input_data_redTime.append(laneState[lane]["redTime"])
+                    laneState[lane]["numVehicle_norm"]=input_data_numVehicle[i]
+                    i+=1
+                
+                #prendo il tempo del rosso e lo normalizzo
+                input_data_redTime=[ laneState[lane]["redTime"] for lane in laneState ]
+                input_data_redTime = SimulationUtil.normalize(input_data_redTime,0,settings.maxSimulationTime)
+                i=0
+                for lane in laneState:
+                    laneState[lane]["redTime_norm"]=input_data_numVehicle[i]
+                    i+=1
 
-                #input_data_redTime = Simulation.normalize(input_data_redTime)
-                input_data_redTime = Simulation.normalize(input_data_redTime,0,settings.maxSimulationTime)
+                #aggiungo il bonus
+                for lane in laneState:
+                    if laneState[lane]["redTime"] > maxRedTime:
+                        laneState[lane]["redTime_norm"]+=   (laneState[lane]["redTime"] - maxRedTime)/5
+                        #bonus calcolato empiricamente
+                        #ogni secondo oltre il maxRedTime va ad aggiungere un punteggio
+
+                
+                #calcolo il punteggio per lane
+                for lane in laneState:
+                    laneState[lane]["out"] = laneState[lane]["numVehicle_norm"]*laneState[lane]["redTime_norm"]
+
+                
+
+                #calcolo la priorita per Phase
+                PhasePriority={}
+                for Phase in settings.traffic.trafficLightPhases_withLane:
+                    priority=0
+                    for lane in settings.traffic.trafficLightPhases_withLane[Phase]:
+                        priority+=laneState[lane]["out"] 
+                    PhasePriority[Phase]=priority
+
+                
+                #TODO: setto lane per lane
+                #sumo.trafficlight.setRedYellowGreenState(settings.traffic.trafficLightID,"GGGGGGGGGGGG")
+
+                #ottengo la Phase con il punteggio maggiore
+                #Phase=max(PhasePriority, key=lambda x:PhasePriority[x])
 
 
-                input_data = np.concatenate((input_data_numVehicle, input_data_redTime))
+                #network.
+                
 
-                #input_data =  np.random.rand(12)
-                #input_data=[ i for i in input_data ]
-
-                output = network.activate(input_data)
-                action=pd.Series(output).idxmax()
-
-                nextPhase=settings.traffic.trafficLightPhases[action]
+                nextPhase=Phase
                 if nextPhase!=currentPhase:
                     pendingPhase=nextPhase   
                     prevPhase=currentPhase
@@ -329,10 +375,15 @@ class Simulation:
 
 
         return (total_simulation_time, max_time_loss , avg)
-         
 
 
 
+
+
+
+
+
+class SimulationUtil:
     def normalize(data,min_val=None,max_val=None):
 
         if min_val == None:
@@ -345,3 +396,4 @@ class Simulation:
         else:
             normalized_data = [(x - min_val) / (max_val - min_val) for x in data]
         return normalized_data
+    
