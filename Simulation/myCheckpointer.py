@@ -16,7 +16,7 @@ class myCheckpointer(BaseReporter):
     """
 
     def __init__(self, generation_interval=100, time_interval_seconds=300,
-                 filename_name='neat-checkpoint.pkl'):
+                 checkpointPath='neat-checkpoint.pkl',winnerPath='winner.pkl'):
         """
         Saves the current state (at the end of a generation) every ``generation_interval`` generations or
         ``time_interval_seconds``, whichever happens first.
@@ -29,7 +29,8 @@ class myCheckpointer(BaseReporter):
         """
         self.generation_interval = generation_interval
         self.time_interval_seconds = time_interval_seconds
-        self.filename_name = filename_name
+        self.checkpointPath = checkpointPath
+        self.winnerPath = winnerPath
 
         self.current_generation = None
         self.last_generation_checkpoint = -1
@@ -61,9 +62,22 @@ class myCheckpointer(BaseReporter):
         #filename = '{0}{1}'.format(self.filename_name, generation)
         #print("Saving checkpoint to {0}".format(filename))
 
-        with gzip.open(self.filename_name, 'w', compresslevel=5) as f:
+        with gzip.open(self.checkpointPath, 'w', compresslevel=5) as f:
             data = (generation, config, population, species_set, random.getstate())
             pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+        #TODO:??  -> salvo anche il winner
+
+        #trovo il winnerID ( chi ha il fitness più alto )
+        t = {p:population[p].fitness for p in population if population[p].fitness!=None }
+        if len(t)>0:        #se non ce ne sono, non salvo ( tutti i fitness a 0 )
+            winnerID=max(t, key=lambda x:t[x])
+
+            winner = population[winnerID]  #--> non so se questo comando potrebbe dare problemi se non c'è un winner ( tutti a None / 0 )
+            with open(self.winnerPath, 'wb') as f:     #salvo il winner
+                pickle.dump(winner, f)
+        
+
 
 
     @staticmethod

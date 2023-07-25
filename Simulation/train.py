@@ -14,15 +14,14 @@ import os
 from ColorTextLib import *
 import math
 import visualize
-from simulationProcess_multiprocess import simulationProcess
+from simulation import SimulationProcess,Simulation,SimulationThread
 from multiprocessing import Process, Manager,Value
 
 settings = Settings()
 portManager = PortManager(threading.Lock())
 portManager.addPort(settings.ports)
 
-
-
+manager = None 
 
 def printMatrix(matrix,length=None):
 
@@ -37,7 +36,6 @@ def printMatrix(matrix,length=None):
 
 
 def toString(genomes,processes,deleteBefore=True):
-    pass
     #stampo tutti i genomi con relativo fitness
     #per ciascuno stampo anche se è già stato processato o no
     tmp={}
@@ -80,8 +78,8 @@ def toString(genomes,processes,deleteBefore=True):
         rowPerBlock=4
         numLines=(numBlock*rowPerBlock)+(numBlock)        #(numBlock)  -> per cancellare le linee vuote
         cursor_up = '\x1b[1A'
-        erase_line = '\x1b[2K'
-        print(((cursor_up + erase_line)*numLines) +cursor_up)
+        #erase_line = '\x1b[2K'         #non serve in quanto la sovrascrivo ogni volta  
+        print(((cursor_up)*numLines) +cursor_up)
     
 
     i=0
@@ -124,14 +122,12 @@ def toString(genomes,processes,deleteBefore=True):
     #fit:       1   2   3   50
     #port       813 814 815 816
 
-manager = None 
+
 
 def eval_genome(genome, config):
 
     genomeToTest = [ (genome_id, g) for  genome_id, g in genome]
 
-    
-    
 
     processesRunning=[]
     processesAll=[]
@@ -153,7 +149,9 @@ def eval_genome(genome, config):
                 net = neat.nn.FeedForwardNetwork.create(g, config)  
                 retVal = manager.dict()
                 secondsFromStart = Value('f', 0.0)
-                proc =simulationProcess(genome_id,net,settings,port=port,GUI=False,secondsFromStart=secondsFromStart,args=(retVal))
+                proc =SimulationProcess(genome_id,net,settings,port=port,GUI=False,args=(retVal,secondsFromStart))  
+                #proc =SimulationThread(genome_id,net,settings,port=port,GUI=False,args=(retVal,secondsFromStart))  
+
                 simData={
                         "port":port,
                         "process":proc,
@@ -202,14 +200,13 @@ def eval_genome(genome, config):
 
 
                 fitness=1/((avg+max_time_loss)/2)
-                #TODO: includo anche il max_time_loss
-                #potrei fare una media tra l'avg e il max_time_loss
+
+                #incluso anche il max_time_loss ->  media tra l'avg e il max_time_loss
                 #oppure aggiungere delle penalità più è alta la differenza tra avg e max_time_loss
                 #oppure escludere direttamente qualsiasi generazione che ha un max_time_loss troppo alto ( tipo il doppio / triplo dell'avg)
             
             g.fitness = fitness
-            #print("Genome: ",p["genome_id"], " - fitness: ", fitness)
-
+           
 
             #se qualche processo ha finito, vuol dire che ci sono posti liberi e aspetto poco
             sleepTime=0.1
@@ -224,59 +221,13 @@ def eval_genome(genome, config):
             toString(genome,processesAll)
 
     
-        
-"""
 
-
-
-    for genome_id, g in genome:
-        net = neat.nn.FeedForwardNetwork.create(g, config)
-        # Genera input casuali di dimensione 10
-        #input_data = np.random.rand(10)
-        # Esegui la rete neurale e ottieni 4 output come probabilità
-        #output = net.activate(input_data)
-        # Esempio: somma degli output per normalizzare in modo che abbiano una somma di 1 (probabilità)
-        #output_sum = sum(output)
-        #if output_sum==0:
-        #    g.fitness=0
-        #else:
-        #    probabilities = [x / output_sum for x in output]
-        #    # Esempio di obiettivo: massimizzare la probabilità del primo output
-        #    g.fitness = probabilities[0]
-        #action=pd.Series(output).idxmax()
-
-        #max_time_loss -> la macchina che ha perso più tempo
-        #avg -> il tempo perso in media per colpa del semaforo 
-
-        total_simulation_time, max_time_loss , avg=simulationProcess.simulate(genome_id,net,settings,GUI=False)
-        fitness=0   #più è alto, meglio è 
-
-        if total_simulation_time>=settings.maxSimulationTime:
-            fitness=0
-        elif avg==0:
-            fitness=1   #perfetto, nessuno ha perso tempo
-        else:
-            fitness=1/avg
-            #TODO: includo anche il max_time_loss
-            #potrei fare una media tra l'avg e il max_time_loss
-            #oppure aggiungere delle penalità più è alta la differenza tra avg e max_time_loss
-            #oppure escludere direttamente qualsiasi generazione che ha un max_time_loss troppo alto ( tipo il doppio / triplo dell'avg)
-        
-        g.fitness = fitness
-        print("Genome: ",genome_id, " - fitness: ", fitness)
-        """
-        
 
 
 def main():
 
-    
-    OnlyRunWinner=False
-
-    
     random.seed(settings.random_seed)
     np.random.seed(settings.random_seed)
-
 
 
     if os.path.exists(settings.checkPointPath):
@@ -299,16 +250,18 @@ def main():
     population.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     population.add_reporter(stats)
-    population.add_reporter(myCheckpointer(1, 5,settings.checkPointPath))   #reporter per salvare la rete neurale
+    population.add_reporter(myCheckpointer(1, 5,settings.checkPointPath,settings.winningPath))   #reporter per salvare la rete neurale
     
     winner=None
 
-    if not OnlyRunWinner:
+    if not settings.OnlyRunWinner:
         # Eseguire l'evoluzione per un numero di generazioni
         for i in range (0,settings.neat_num_generations):
             winner = population.run(eval_genome, 1)
-            with open(settings.winningPath, 'wb') as f:
-                pickle.dump(winner, f)
+
+            #salva il winner
+            #with open(settings.winningPath, 'wb') as f:
+            #    pickle.dump(winner, f)
 
             
 
@@ -329,11 +282,11 @@ def main():
 
 
     node_names = {-1: 'E0_0D', -2: 'E0_1D',-3: '-E4_0D',-4: '-E5_0D',-5: 'E2_0D',-6: 'E2_1D',-7: 'T1',-8: '-T2',-9: 'T3',-10: 'T4',-11: 'T5',-12: 'T6', 0: 'Phase 1',1: 'Phase 3',2: 'Phase 5',3: 'Phase 7',4: 'Phase 9'}
-    visualize.draw_net(config, winner, True, node_names=node_names)
+    visualize.draw_net(config, winner,True, filename="__deleteMe" ,node_names=node_names)
     #visualize.draw_net(config, winner, True, node_names=node_names, prune_unused=True)
     
 
-    if not OnlyRunWinner:
+    if not settings.OnlyRunWinner:
         visualize.plot_stats(stats, ylog=False, view=True)
         visualize.plot_species(stats, view=True)
 
@@ -341,7 +294,7 @@ def main():
     # Utilizzare il vincitore per effettuare predizioni
     winner_net = neat.nn.FeedForwardNetwork.create(winner, population.config)
     
-    p = simulationProcess(0,winner_net,settings,GUI=True)
+    p = SimulationProcess(winner.key,winner_net,settings,GUI=True)
     total_simulation_time, max_time_loss , avg=p.simulate()
     print("total_simulation_time: ",total_simulation_time)
     print("max_time_loss: ",max_time_loss)
