@@ -3,7 +3,6 @@ import subprocess
 from PortManager import PortManager
 import time
 from Settings import Settings
-from singleton import Singleton
 import traci
 from multiprocessing import Process, Value
 from threading import Thread
@@ -45,7 +44,11 @@ class SimulationThread(Thread):
 
 
     def run(self) :
-        self.retVal["total_simulation_time"], self.retVal["max_time_loss"], self.retVal["avg"]= Simulation.simulate(self)
+        ret  = Simulation.simulate(self)
+
+        self.retVal["total_simulation_time"]=ret[0]
+        self.retVal["max_time_loss"]=ret[1]
+        self.retVal["avg"]=ret[2]
 
 
 class SimulationProcess(Process):
@@ -70,11 +73,9 @@ class SimulationProcess(Process):
             self.secondsFromStart = Value('f',0.0)
 
     def setSecondFromStart(self,sec):
-        #self.secondsFromStart=sec
         self.secondsFromStart.value=sec
 
     def getSecondFromStart(self):
-        #return self.secondsFromStart
         return self.secondsFromStart.value
 
 
@@ -86,7 +87,6 @@ class SimulationProcess(Process):
         self.retVal["max_time_loss"]=ret[1]
         self.retVal["avg"]=ret[2]
 
-        #self.retVal["total_simulation_time"], self.retVal["max_time_loss"], self.retVal["avg"]= Simulation.simulate(self)
 
 
 class Simulation: 
@@ -136,7 +136,6 @@ class Simulation:
         secondsFromAllRed=0
         secondsFromGreen=0
 
-        #secondsFromStart=0
 
         laneState={
             "E0_0":{"redTime":0, "lastState":"r","index":9},        #da sx -> dritto / gira in basso

@@ -181,7 +181,6 @@ def eval_genome(genome, config):
 
         for p in processesJustEnd:
             
-            #total_simulation_time, max_time_loss , avg=p["process"].retVal
             total_simulation_time, max_time_loss , avg = p["retVal"]["total_simulation_time"],p["retVal"]["max_time_loss"],p["retVal"]["avg"]
             p["finish"]=True
 
@@ -294,8 +293,8 @@ def main():
     # Utilizzare il vincitore per effettuare predizioni
     winner_net = neat.nn.FeedForwardNetwork.create(winner, population.config)
     
-    p = SimulationProcess(winner.key,winner_net,settings,GUI=True)
-    total_simulation_time, max_time_loss , avg=p.simulate()
+    caller = SimulationProcess(winner.key,winner_net,settings,GUI=True,args=(None,None))
+    total_simulation_time, max_time_loss , avg=Simulation.simulate(caller)      #lo avvio su questo thread
     print("total_simulation_time: ",total_simulation_time)
     print("max_time_loss: ",max_time_loss)
     print("avg: ",avg)
