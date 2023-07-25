@@ -11,7 +11,7 @@ import neat
 import numpy as np
 from util import util
 import pandas as pd
-
+import copy
 
 class SimulationParallel():
     def __init__(
@@ -98,7 +98,7 @@ class SimulationAgent_AI:
     def __init__(self,setting: Settings) -> None:
         self.setting=setting
         
-    def run(data):
+    def __call__(self,data):
         #ritorna un array di priorità per ogni lane
         pass
 
@@ -106,8 +106,8 @@ class SimulationAgent_HAND:
     def __init__(self,setting: Settings) -> None:
         self.setting=setting
         
-    def run(data):
-        pass 
+    def __call__(self, data):
+        pass
 
 
 class Simulation: 
@@ -151,24 +151,18 @@ class Simulation:
         
         vehicles={}
         
-        pendingPhase=None
-        secondsFromAllRed=0
-        secondsFromGreen=0
+        lanes=copy.deepcopy(settings.traffic.lanes)
+        #non necessario ma per pulizia e "documentazione" assegno le variabili ad ogni lane
+        for lane in lanes:
+            lanes[lane]["currentState"]='r'
+            lanes[lane]["numVehicle"]=0
+            lanes[lane]["redTime"]=0
+            lanes[lane]["greenTime"]=0
+            lanes[lane]["yellowTime"]=0
+            lanes[lane]["lockUntill"]=-1        #se è settata, il valore della lane non può essere modificata fino a che il tempo (self.getSecondFromStart()) non supera questo valore
+            lanes[lane]["nextState"]=''
 
-
-        laneState={
-            "E0_0":{"redTime":0, "lastState":"r","index":9,"numVehicle":0},        #da sx -> dritto / gira in basso
-            "E0_1":{"redTime":0, "lastState":"r","index":11,"numVehicle":0},        #da sx -> gira in alto
-            "-E4_0":{"redTime":0, "lastState":"r","index":6,"numVehicle":0},       #da basso 
-            "-E5_0":{"redTime":0, "lastState":"r","index":0,"numVehicle":0},       #da alto 
-            "E2_0":{"redTime":0, "lastState":"r","index":3,"numVehicle":0},        #da destra -> dritto / gira in alto
-            "E2_1":{"redTime":0, "lastState":"r","index":5,"numVehicle":0},        #da destra -> gira in basso
-        }
-
-
-
-        maxRedTime=60   #secondi massimi per il semaforo rosso 
-
+        nextLanesToSetGreen=[]
         while sumo.simulation.getMinExpectedNumber() > 0:
             sumo.simulationStep()
 
@@ -178,168 +172,168 @@ class Simulation:
                 break      
             
             #vedo lo stato attuale e modifico i tempi di rosso dei vari semafori
+            #TODO: potrei usare più cicli ma forse così è più leggibile
             signal_state = sumo.trafficlight.getRedYellowGreenState(settings.traffic.trafficLightID)            
-            for lane in laneState:
-                current = signal_state[ laneState[lane]["index"]]
-                if laneState[lane]["lastState"] == 'r': #se prima era rosso
-                    if current == 'r' :  #e adesso è rosso 
-                        laneState[lane]["redTime"]+=settings.step_length    #aumento il tempo
-                    elif  current == 'G' :      #se è verde
-                        laneState[lane]["redTime"]=0    #lo resetto
+            for lane in lanes:
+                current = signal_state[ lanes[lane]["strIndexes"][0] ]      #per ogni index nel signal_state dovrei trovare lo stesso carattere/stato, controllo solo il primo
+                if lanes[lane]["currentState"] == 'r': #se prima era rosso
+                    if current == 'r' :                                     #e adesso è rosso 
+                        lanes[lane]["redTime"]+=settings.step_length                                #aumento il tempo
+                    elif  current == 'y' :                                  #e adesso è è giallo
+                        lanes[lane]["redTime"]=0                                                    #lo resetto
+                    elif  current == 'G' :                                  #e adesso è è verde
+                        lanes[lane]["redTime"]=0                                                    #lo resetto
 
-                laneState[lane]["lastState"]=current
+
+                elif lanes[lane]["currentState"] == 'y': #se prima era giallo
+                    if current == 'r' :                                     #e adesso è rosso 
+                        lanes[lane]["yellowTime"]=0                                                 #lo resetto
+                    elif  current == 'y' :                                  #e adesso è è giallo
+                        lanes[lane]["yellowTime"]+=settings.step_length                             #aumento il tempo
+                    elif  current == 'G' :                                  #e adesso è è verde
+                        lanes[lane]["yellowTime"]=0                                                 #lo resetto
+
+
+
+                elif lanes[lane]["currentState"] == 'G': #se prima era verde
+                    if current == 'r' :                                     #e adesso è rosso 
+                        lanes[lane]["greenTime"]=0                                                  #lo resetto
+                    elif  current == 'y' :                                  #e adesso è è giallo
+                        lanes[lane]["greenTime"]=0                                                  #lo resetto
+                    elif  current == 'G' :                                  #e adesso è è verde
+                        lanes[lane]["greenTime"]+=settings.step_length                              #aumento il tempo
+
+                lanes[lane]["currentState"]=current
             
 
             #recupero il numero di veicoli per lane 
-            num_vehicles_per_lane = {}
-            for detector in settings.traffic.laneDetectors:
-                lane=settings.traffic.laneDetectors[detector]["lane"]
-                num_vehicles_per_lane[lane] = sumo.lanearea.getLastStepVehicleNumber(detector)
+            for lane in lanes:
+                detector = lanes[lane]["detector"]
+                lanes[lane]["numVehicle"] = sumo.lanearea.getLastStepVehicleNumber(detector)
                 
 
-            for lane in laneState:
-                laneState[lane]["numVehicle"]=num_vehicles_per_lane[lane]
-
             #aggiustamento per un sensore
-            sensoreDestroAgg=num_vehicles_per_lane["-E1_0"]
+            sensoreDestroAgg=sumo.lanearea.getLastStepVehicleNumber["-E1_0D"]
             if sensoreDestroAgg>0:
                 sensoreDestroAgg+=1
-            laneState["E2_0"]["numVehicle"] += sensoreDestroAgg/2    #immagino che metà vanno dritti 
-            laneState["E2_1"]["numVehicle"] += sensoreDestroAgg/2    #e l'altra metà giri
+            lanes["E2_0"]["numVehicle"] += sensoreDestroAgg/2    #immagino che metà vanno dritti 
+            lanes["E2_1"]["numVehicle"] += sensoreDestroAgg/2    #e l'altra metà giri
+
+
+
 
 
             #TODO: ottimizzabile se ristrutturo i 2 pezzi di codice precendete
             #se ci sono 0 auto su una lane, porto a 0 il tempo del rosso ( non c'è nessuna auto in attesa!! )
-            for lane in laneState:
-                if laneState[lane]["numVehicle"]==0:        
-                    laneState[lane]["redTime"]=0
+            for lane in lanes:
+                if lanes[lane]["numVehicle"]==0:
+                    lanes[lane]["redTime"]=0
 
 
-
-
-            #Phase corrente del semaforo
-            currentPhase=sumo.trafficlight.getPhase(settings.traffic.trafficLightID)    
 
             #aggiorno i tempi persi per ogni veicolo
             for vehicle_id in sumo.vehicle.getIDList():
                 time_loss=sumo.vehicle.getTimeLoss(vehicle_id)
                 vehicles[vehicle_id]=time_loss
 
+
+            #controllo ogni lane e verifico i lock, se i lock sono terminati li setto a -1
+            for lane in lanes:
+                if lanes[lane]["lockUntill"]!= -1 and self.getSecondFromStart() > lanes[lane]["lockUntill"]:
+                    lanes[lane]["lockUntill"]=-1
+
+            #controllo ogni lane e verifico il giallo, se yellowTime >= self.traffic.yellowTime
+                #si -> porto lo stato a rosso e setto yellowTime = 0
+                #no -> incremento yellowTime
+            for lane in lanes:
+                if lanes[lane]["currentState"]=='y' and lanes[lane]["yellowTime"]>=self.traffic.yellowTime:
+                    lanes[lane]["nextState"]='r'
+                    lanes[lane]["yellowTime"]=0
+
+                    #TODO: non so se farlo qua o fidarmi del controllo precedente unito al set del lock quando setto il giallo
+                    #lanes[lane]["lockUntill"]=self.getSecondFromStart()+2  #per almeno due secondi deve rimanere rosso??
+
+
+
             #-------------------------------------
             #--------------- LOGICA ---------------
             #-------------------------------------
-            #se sono in "rosso" e non c'è nessuno stato da attivare 
-                # ALGORITMO
-
-            #sono in "rosso" (  settings.traffic.stateIndex_Red ) e c'è uno stato da attivare 
-                #si -> imposto lo stato che c'è in "pending"
-                    
-                
-            #se sono in "giallo" ( ovvero in un indice successivo a tutti quelli prensenti dentro settings.traffic.trafficLightStates / quindi NON presente nella lista)
-                #attendo -> in automatico dovrebbe andare a rosso e di conseguenza andare nel punto 1/2
-            
-            #se sono in "verde"
-                # se sono passati MENO di settings.traffic.minTimeBeforeChange
-                    #attendo -> per "sicurezza" non posso cambiare troppo spesso il semaforo quindi devo aspettare
-                # se sono passati PIU di settings.traffic.minTimeBeforeChange
-                    # ALGORITMO
 
             
-            #se ho lavorato con la ALGORITMO
-                #se la ALGORITMO da una action che porta ad uno stato UGUALE a quello attuale 
-                    #non faccio niente
-                # ...................................... stato DIVERSO da quello attuale 
-                    #imposto il giallo ( stato successivo al corrente ) e imposto nel "pending" lo stato da impostare                     
-                    
 
 
+            #ad ogni step lancio l'AGENT che mi dice quali sono le lane che dovrebbero essere attivate in ordine di priorità
+                #per ogni lane
+                    #controllo se è compatibile con quelle prima ( no -> vado alla successiva )
+                    #verifico se la lane è già verde  ( si -> vado alla successiva )
+                    #controllo se la lane è bloccata (si -> vado alla successiva )
+                    #controllo se la lane è incompatibile con altre lane già verdi
+                        #se è incompatibile con qualcuna 
+                            #per tutte le lane incompatibili controllo se sono bloccate -> se anche 1 è bloccata ( e verde implicito ) -> vado alla successiva ( ha lei la priorità )
+                            #se NESSUNA è bloccata, allora le setto a gialle ( dovrò aspettare che diventino rosse per poter settare la mia )
+                                            #TODO: implemento un valore nelle lanes che mi dice che deve essere attivata una lane dopo che un altra diventa gialla? 
+                                            #oppure mi affido al fatto che quando la lane che in questo momento è incompatibile diventa rossa, l'altra dovrebbe avere una 
+                                            #priorità ancora alta?? ( al momento provo la seconda)
+                        #se compatibile
+                            #la setto a verde
 
 
+            laneProbability = simulationAgent(lanes)
+            laneProbability=[
+                ["E0_0",0.9],
+                ["E0_1",0.7],
+                ["-E4_0",0.5],
+                ["-E5_0",0.3],
+                ["E2_0",0.2],
+                ["E2_1",0.1],
+            ]
+               
+            acceptedLanes=[]
+            greenLanes=[lane for lane in lanes if lanes[lane]["currentState"]=='G']
 
-            toNN=False
+            for el in laneProbability:
+                lane = el[0]
+                isAccepted=False
 
-            if currentPhase == settings.traffic.stateIndex_Red:     #allRed
-                secondsFromAllRed+=settings.step_length     #passato uno step, quindi un tot di tempo
-                if pendingPhase==None:
-                    toNN=True
-                else:       #se c'è uno stato da attivare
-                    if secondsFromAllRed >= settings.traffic.redAllSeconds: #e sono passati abbastanza secondi di allRed
-                        sumo.trafficlight.setPhase(settings.traffic.trafficLightID, pendingPhase)
-                        pendingPhase=None
-                        secondsFromAllRed=0
-                        secondsFromGreen=0
-                    
-            elif currentPhase not in settings.traffic.trafficLightPhases:     #giallo
-                pass #non serve questo if... ma lo lascio per debug
+                #scorro tutte le linee accettate ( da portare a verdi ), se ce ne sono alcune NON presenti nelle compatibili della corrente, le conto
+                incompatibilities= len([ lane for lane in acceptedLanes if lane not in lanes[lane]["laneCompatibility"] ])
+                if incompatibilities > 0: continue  #ci sono incompatibilità -> successivo
+                if lanes[lane]["currentState"]=='G':    #se è gia verde -> ok 
+                    isAccepted=True
+                else:
+                    if lanes[lane]["lockUntill"]==-1: continue  #se è bloccata (e NON è verde ) -> successivo
+                    incompatibilities= [ lane for lane in greenLanes if lane not in lanes[lane]["laneCompatibility"] ]
+                    if len(incompatibilities)>0:
+                        incompatibilities_Locked= [lane for lane in incompatibilities if lanes[lane]["lockUntill"]!=-1]
+                        if len(incompatibilities_Locked) > 0: continue  #ci sono incompatibilità bloccate-> hanno loro la priorità -> successivo
+                        for lane in incompatibilities:
+                            lanes[lane]["nextState"]='y'
+                    else:
+                        isAccepted=True
 
-
-            elif currentPhase in settings.traffic.trafficLightPhases:     #verde
-                secondsFromGreen+=settings.step_length                      
-                if secondsFromGreen > settings.traffic.minTimeBeforeChange:   #passato un po dall'ultimo cambio          
-                    toNN=True                                                 #chiedo a NN
-
-
-            
-           
-
-
-            if toNN:
+                if isAccepted:
+                    acceptedLanes.append(lane)
+                    lanes[lane]["nextState"]='G'
                 
-                #recupero il numero di veicoli per lane e li normalizzo
-                input_data_numVehicle=[ laneState[lane]["numVehicle"] for lane in laneState ]
-                input_data_numVehicle = SimulationUtil.normalize(input_data_numVehicle,min_val=0)
-                i=0
-                for lane in laneState:
-                    laneState[lane]["numVehicle_norm"]=input_data_numVehicle[i]
-                    i+=1
-                
-                #prendo il tempo del rosso e lo normalizzo
-                input_data_redTime=[ laneState[lane]["redTime"] for lane in laneState ]
-                input_data_redTime = SimulationUtil.normalize(input_data_redTime,0,settings.maxSimulationTime)
-                i=0
-                for lane in laneState:
-                    laneState[lane]["redTime_norm"]=input_data_numVehicle[i]
-                    i+=1
-
-                #aggiungo il bonus
-                for lane in laneState:
-                    if laneState[lane]["redTime"] > maxRedTime:
-                        laneState[lane]["redTime_norm"]+=   (laneState[lane]["redTime"] - maxRedTime)/5
-                        #bonus calcolato empiricamente
-                        #ogni secondo oltre il maxRedTime va ad aggiungere un punteggio
-
-                
-                #calcolo il punteggio per lane
-                for lane in laneState:
-                    laneState[lane]["out"] = laneState[lane]["numVehicle_norm"]*laneState[lane]["redTime_norm"]
-
-                
-
-                #calcolo la priorita per Phase
-                PhasePriority={}
-                for Phase in settings.traffic.trafficLightPhases_withLane:
-                    priority=0
-                    for lane in settings.traffic.trafficLightPhases_withLane[Phase]:
-                        priority+=laneState[lane]["out"] 
-                    PhasePriority[Phase]=priority
-
-                
-                #TODO: setto lane per lane
-                #sumo.trafficlight.setRedYellowGreenState(settings.traffic.trafficLightID,"GGGGGGGGGGGG")
-
-                #ottengo la Phase con il punteggio maggiore
-                #Phase=max(PhasePriority, key=lambda x:PhasePriority[x])
+            #se non ci sono modifiche, setto lo stato successivo a quello corrente
+            for lane in lanes:
+                if lanes[lane]["nextState"]=='':
+                    lanes[lane]["nextState"]=lanes[lane]["currentState"]
 
 
-                #network.
-                
+            #creo la stringa per settare i semafori
+            stateStrLen=max([ max(lanes[lane]["strIndexes"]) for lane in lanes ])
+            stateStr=" "*stateStrLen
+            for lane in lanes:
+                for i in lanes[lane]["strIndexes"]:
+                    stateStr[i]=lanes[lane]["nextState"]
 
-                nextPhase=Phase
-                if nextPhase!=currentPhase:
-                    pendingPhase=nextPhase   
-                    prevPhase=currentPhase
-                    if currentPhase != settings.traffic.stateIndex_Red:   #primo caso, quando parte che è allRed, non devo portare a Giallo
-                        sumo.trafficlight.setPhase(settings.traffic.trafficLightID, currentPhase+1)
+
+            #setto lo stato del semaforo corrente
+            sumo.trafficlight.setRedYellowGreenState(settings.traffic.trafficLightID,stateStr)
+
+            #ottengo la Phase con il punteggio maggiore
+            #Phase=max(PhasePriority, key=lambda x:PhasePriority[x])
 
 
 

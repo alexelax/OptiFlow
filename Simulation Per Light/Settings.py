@@ -2,6 +2,8 @@
 from container import container
 import os
 
+
+
 class Settings:
     def __init__(self) -> None:
         
@@ -69,12 +71,36 @@ class Settings:
 
         #strIndexes -> index all'interno della stringa 'rrrGGrrrrGGr'
         self.traffic.lanes={
-            "E0_0":{"strIndexes":[9,10],"detector":"E0_0D"},        #da sx -> dritto / gira in basso
-            "E0_1":{"strIndexes":[11],"detector":"E0_1D"},        #da sx -> gira in alto
-            "-E4_0":{"strIndexes":[6,7,8],"detector":"-E4_0D"},       #da basso 
-            "-E5_0":{"strIndexes":[0,1,2],"detector":"-E5_0D"},       #da alto 
-            "E2_0":{"strIndexes":[3,4],"detector":"E2_0"},        #da destra -> dritto / gira in alto
-            "E2_1":{"strIndexes":[5],"detector":"E2_1"},        #da destra -> gira in basso
+            "E0_0":{                    #da sx -> dritto / gira in basso
+                "strIndexes":[9,10],
+                "detector":"E0_0D",
+                "laneCompatibility":["E0_1","E2_0"]
+            },       
+            "E0_1":{                    #da sx -> gira in alto
+                "strIndexes":[11],
+                "detector":"E0_1D",
+                "laneCompatibility":["E0_0","E2_1"]
+                },        
+            "-E4_0":{                   #da basso 
+                "strIndexes":[6,7,8],
+                "detector":"-E4_0D",
+                "laneCompatibility":["-E5_0"]
+                },       
+            "-E5_0":{                    #da alto 
+                "strIndexes":[0,1,2],
+                "detector":"-E5_0D",
+                "laneCompatibility":["-E4_0"]
+                },      
+            "E2_0":{                    #da destra -> dritto / gira in alto
+                "strIndexes":[3,4],
+                "detector":"E2_0",
+                "laneCompatibility":["E0_0","E2_1"]
+                },        
+            "E2_1":{                    #da destra -> gira in basso
+                "strIndexes":[5],
+                "detector":"E2_1",
+                "laneCompatibility":["E0_1","E2_0"]
+                },       
         }
         #TODO: ricordarsi nel codice di aggiungere questo
         # "-E1_0D":{"lane":"-E1_0"},       #da destra -> prima di unione corsie
