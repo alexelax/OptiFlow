@@ -13,10 +13,135 @@ from util import util
 import pandas as pd
 import copy
 
+class SimulationAgent_AI:
+    def __init__(self,setting: Settings,args=() ) -> None:
+        self.setting=setting
+        if type(args) is tuple:
+            self.network= args[0]
+        else:
+            self.network= args
+
+
+
+
+    def __call__(self,data):
+
+        greenTime =[ data[line]["greenTime"] for line in data]
+        redTime =[ data[line]["redTime"] for line in data]
+        autoPerLane =[ data[line]["numVehicle"] for line in data]
+
+        greenTime = SimulationUtil.normalize(greenTime,0,self.setting.maxSimulationTime)
+        redTime = SimulationUtil.normalize(redTime,0,self.setting.maxSimulationTime)
+        autoPerLane = SimulationUtil.normalize(autoPerLane)
+
+        input_data = np.concatenate((autoPerLane,greenTime, redTime))
+        tinput_data = [i for i in input_data]
+
+        output = self.network.activate(input_data)
+        
+
+
+        o= [ a for a in zip(data.keys(),output)]
+        o.sort(key=lambda a: a[1],reverse = True)
+
+        return o
+
+
+"""
+ maxGreenTime=self.params[0]
+        maxRedTime=self.params[1]
+        redFactor= self.params[2]
+        redNorMin= self.params[3]
+        redNorMax= self.params[4]
+        greenNorMin= self.params[5]
+        greenNorMax= self.params[6]
+[60,60,0.25,0,720,-0.01,180]
+"""
+
+class SimulationAgent_HAND:
+    def __init__(self,setting: Settings,args=()) -> None:
+        self.setting=setting
+        
+    def __call__(self, data):
+
+        maxGreenTime=60
+        maxRedTime=self.setting.traffic.maxRedTime
+
+        autoPerLane =[ data[line]["numVehicle"] for line in data]
+        autoPerLane = SimulationUtil.normalize(autoPerLane)
+
+        redTime =[ data[line]["redTime"] for line in data]
+        redTimeBonus =[ 0 if data[line]["redTime"] < maxRedTime else (data[line]["redTime"]-maxRedTime)/4 for line in data]
+        redTime = SimulationUtil.normalize(redTime,0,self.setting.maxSimulationTime)             #valmax normalizzazione empirico
+        redTime = [ a[0]+a[1] for a in zip(redTime,redTimeBonus)]                                   
+
+
+        greenTime =[ data[line]["greenTime"] for line in data]
+        greenTime =[ maxGreenTime-t if t < maxGreenTime else 0 for t in greenTime]
+        greenTime = SimulationUtil.normalize(greenTime,-0.01,self.setting.maxSimulationTime/4)      #val/minvalmax normalizzazione empirico
+        
+        
+        output= [ a for a in zip(data.keys(),autoPerLane,redTime,greenTime)]
+        out=[]
+        for o in output:
+            out.append([ o[0],(o[1]*o[2])+ (o[1]*o[3])])
+ 
+
+        out.sort(key=lambda a: a[1],reverse = True)
+
+        return out
+
+
+class SimulationAgent_HAND_GA:
+    def __init__(self,setting: Settings,args=()) -> None:
+        self.setting=setting
+        self.params=args[0]
+        
+    def __call__(self, data):
+
+        
+
+        maxGreenTime=self.params[0]
+        maxRedTime=self.params[1]
+        redFactor= self.params[2]
+        redNorMin= self.params[3]
+        redNorMax= self.params[4]
+        greenNorMin= self.params[5]
+        greenNorMax= self.params[6]
+
+
+
+
+        autoPerLane =[ data[line]["numVehicle"] for line in data]
+        autoPerLane = SimulationUtil.normalize(autoPerLane)
+
+        redTime =[ data[line]["redTime"] for line in data]
+        redTimeBonus =[ 0 if data[line]["redTime"] < maxRedTime else (data[line]["redTime"]-maxRedTime)*redFactor for line in data]
+        redTime = SimulationUtil.normalize(redTime,redNorMin,redNorMax)             
+        redTime = [ a[0]+a[1] for a in zip(redTime,redTimeBonus)]                                   
+
+
+        greenTime =[ data[line]["greenTime"] for line in data]
+        greenTime =[ maxGreenTime-t if t < maxGreenTime else 0 for t in greenTime]
+        greenTime = SimulationUtil.normalize(greenTime,greenNorMin,greenNorMax)      #val/minvalmax normalizzazione empirico
+        
+        
+        output= [ a for a in zip(data.keys(),autoPerLane,redTime,greenTime)]
+        out=[]
+        for o in output:
+            out.append([ o[0],(o[1]*o[2])+ (o[1]*o[3])])
+ 
+
+        out.sort(key=lambda a: a[1],reverse = True)
+
+        return out
+
+
+
 class SimulationParallel():
     def __init__(
             self, id:int,
-            network:neat.nn.FeedForwardNetwork,
+            agent: SimulationAgent_AI | SimulationAgent_HAND ,
             settings,
             port=None,
             GUI:bool=False,
@@ -28,7 +153,7 @@ class SimulationParallel():
         assert len(args) == 2, "passare 2 parametri ad args: un manager.dict() ( usato per il ritorno dei valori) e Value('f', 0.0) ( usata per aggiornare il tempo della simulazione ) "
         
         self.id = id
-        self.network = network
+        self.agent = agent
         self.settings=settings
         self.retVal=args[0]
         if self.retVal == None:
@@ -40,84 +165,59 @@ class SimulationParallel():
         if self.secondsFromStart == None:
             self.secondsFromStart = Value('f',0.0)
 
-    def setSecondFromStart(self,sec):
-        self.secondsFromStart.value=sec
-
-    def getSecondFromStart(self):
-        return self.secondsFromStart.value
-
     
     def runAndWait(self):
         self.start()
         self.join()
-        return (self.retVal["total_simulation_time"],self.retVal["max_time_loss"],self.retVal["avg"])
+        return (self.retVal["total_simulation_time"],self.retVal["max_time_loss"],self.retVal["avg"],self.retVal["exitCode"])
 
 
 class SimulationThread(SimulationParallel,Thread):
     def __init__(self, id:int,
-            network:neat.nn.FeedForwardNetwork,
+            agent:SimulationAgent_AI | SimulationAgent_HAND ,
             settings:Settings,
             port=None,
             GUI:bool=False,
             name=None, args=()):  
-        super().__init__(id,network,settings,port=port,GUI=GUI,name=name,args=args)
+        super().__init__(id,agent,settings,port=port,GUI=GUI,name=name,args=args)
         self.settings : Settings
         
 
     def run(self):
-        ret  = self.settings.SimulationEngine.simulate(self)
+        ret  = Simulation.simulate(self.settings,self.secondsFromStart,self.agent,self.port,self.GUI)
 
         self.retVal["total_simulation_time"]=ret[0]
         self.retVal["max_time_loss"]=ret[1]
         self.retVal["avg"]=ret[2]
-
-
+        self.retVal["exitCode"]=ret[3]
 
 class SimulationProcess(SimulationParallel,Process):
     def __init__(self, id:int,
-            network:neat.nn.FeedForwardNetwork,
+            agent:SimulationAgent_AI | SimulationAgent_HAND ,
             settings:Settings,
             port=None,
             GUI:bool=False,
             name=None, args=()):  
-        super().__init__(id,network,settings,port=port,GUI=GUI,name=name,args=args)
+        super().__init__(id,agent,settings,port=port,GUI=GUI,name=name,args=args)
         self.settings : Settings
         
 
     def run(self):
-        ret  = self.settings.SimulationEngine.simulate(self)
+
+        ret  = Simulation.simulate(self.settings,self.secondsFromStart,self.agent,self.port,self.GUI)
 
         self.retVal["total_simulation_time"]=ret[0]
         self.retVal["max_time_loss"]=ret[1]
         self.retVal["avg"]=ret[2]
+        self.retVal["exitCode"]=ret[3]
 
 
-
-
-class SimulationAgent_AI:
-    def __init__(self,setting: Settings) -> None:
-        self.setting=setting
-        
-    def __call__(self,data):
-        #ritorna un array di priorità per ogni lane
-        pass
-
-class SimulationAgent_HAND:
-    def __init__(self,setting: Settings) -> None:
-        self.setting=setting
-        
-    def __call__(self, data):
-        pass
 
 
 class Simulation: 
-    def simulate(callerClass:SimulationProcess | SimulationThread, simulationAgent: SimulationAgent_AI | SimulationAgent_HAND):
-        self=callerClass
-
-        settings = self.settings
-        port=self.port
-        GUI= self.GUI
-
+    def simulate(settings: Settings, secondFromStart:Value, simulationAgent: SimulationAgent_AI | SimulationAgent_HAND,port:int=None,GUI:bool=False):
+        
+    
         # Path to the SUMO binary
         sumo_binary = "sumo" 
         if(GUI):
@@ -141,16 +241,13 @@ class Simulation:
         #se si usa il parametro "waiting_time", aggiungere ai cmq questo ->         ,"--waiting-time-memory","3600"
         #serve per far si che il waiting_time non venga resettato ogni 100s
 
-
         subprocess.Popen(sumo_cmd)
-
-
-        #sumo_process = traci.start(sumo_cmd)
         sumo = traci.connect(port)
 
         
+
+
         vehicles={}
-        
         lanes=copy.deepcopy(settings.traffic.lanes)
         #non necessario ma per pulizia e "documentazione" assegno le variabili ad ogni lane
         for lane in lanes:
@@ -162,14 +259,26 @@ class Simulation:
             lanes[lane]["lockUntill"]=-1        #se è settata, il valore della lane non può essere modificata fino a che il tempo (self.getSecondFromStart()) non supera questo valore
             lanes[lane]["nextState"]=''
 
-        nextLanesToSetGreen=[]
+        #laststateStr=""
+        #timeLastChange=0
+        #breakForWasteTime=False
+
+        exitCode=0
+        
         while sumo.simulation.getMinExpectedNumber() > 0:
             sumo.simulationStep()
 
+            #azzero i valori precedenti che possono dare problemi 
+            for lane in lanes:
+                lanes[lane]["nextState"]=''
+
+                
             #controllo se ci mette troppo -> termino
-            self.setSecondFromStart(self.getSecondFromStart()+settings.step_length)
-            if self.getSecondFromStart()>settings.maxSimulationTime:
+            secondFromStart.value+=settings.step_length
+            if secondFromStart.value>settings.maxSimulationTime:
                 break      
+
+            
             
             #vedo lo stato attuale e modifico i tempi di rosso dei vari semafori
             #TODO: potrei usare più cicli ma forse così è più leggibile
@@ -213,7 +322,7 @@ class Simulation:
                 
 
             #aggiustamento per un sensore
-            sensoreDestroAgg=sumo.lanearea.getLastStepVehicleNumber["-E1_0D"]
+            sensoreDestroAgg=sumo.lanearea.getLastStepVehicleNumber("-E1_0D")
             if sensoreDestroAgg>0:
                 sensoreDestroAgg+=1
             lanes["E2_0"]["numVehicle"] += sensoreDestroAgg/2    #immagino che metà vanno dritti 
@@ -239,14 +348,14 @@ class Simulation:
 
             #controllo ogni lane e verifico i lock, se i lock sono terminati li setto a -1
             for lane in lanes:
-                if lanes[lane]["lockUntill"]!= -1 and self.getSecondFromStart() > lanes[lane]["lockUntill"]:
+                if lanes[lane]["lockUntill"]!= -1 and secondFromStart.value > lanes[lane]["lockUntill"]:
                     lanes[lane]["lockUntill"]=-1
 
             #controllo ogni lane e verifico il giallo, se yellowTime >= self.traffic.yellowTime
                 #si -> porto lo stato a rosso e setto yellowTime = 0
                 #no -> incremento yellowTime
             for lane in lanes:
-                if lanes[lane]["currentState"]=='y' and lanes[lane]["yellowTime"]>=self.traffic.yellowTime:
+                if lanes[lane]["currentState"]=='y' and lanes[lane]["yellowTime"]>=settings.traffic.yellowTime:
                     lanes[lane]["nextState"]='r'
                     lanes[lane]["yellowTime"]=0
 
@@ -278,42 +387,43 @@ class Simulation:
                             #la setto a verde
 
 
+
             laneProbability = simulationAgent(lanes)
-            laneProbability=[
-                ["E0_0",0.9],
-                ["E0_1",0.7],
-                ["-E4_0",0.5],
-                ["-E5_0",0.3],
-                ["E2_0",0.2],
-                ["E2_1",0.1],
-            ]
+           
                
             acceptedLanes=[]
             greenLanes=[lane for lane in lanes if lanes[lane]["currentState"]=='G']
+            yellowLanes=[lane for lane in lanes if lanes[lane]["currentState"]=='y']
 
             for el in laneProbability:
                 lane = el[0]
                 isAccepted=False
 
                 #scorro tutte le linee accettate ( da portare a verdi ), se ce ne sono alcune NON presenti nelle compatibili della corrente, le conto
-                incompatibilities= len([ lane for lane in acceptedLanes if lane not in lanes[lane]["laneCompatibility"] ])
+                incompatibilities= len([ l for l in acceptedLanes if l not in lanes[lane]["laneCompatibility"] ])
                 if incompatibilities > 0: continue  #ci sono incompatibilità -> successivo
-                if lanes[lane]["currentState"]=='G':    #se è gia verde -> ok 
+                elif lanes[lane]["nextState"]=='y': continue   #se qualcuno ha già impostato che il next deve essere y ( quindi era verde) ma deve spegnersi, non puo essere accettato
+                elif lanes[lane]["currentState"]=='G':
                     isAccepted=True
                 else:
-                    if lanes[lane]["lockUntill"]==-1: continue  #se è bloccata (e NON è verde ) -> successivo
-                    incompatibilities= [ lane for lane in greenLanes if lane not in lanes[lane]["laneCompatibility"] ]
+                    if lanes[lane]["lockUntill"]!=-1: continue  #se è bloccata (e NON è verde ) -> successivo
+                    incompatibilities= [ l for l in greenLanes if l not in lanes[lane]["laneCompatibility"] ]
+                    incompatibilities.extend([ l for l in yellowLanes if l not in lanes[lane]["laneCompatibility"] ])
+
                     if len(incompatibilities)>0:
-                        incompatibilities_Locked= [lane for lane in incompatibilities if lanes[lane]["lockUntill"]!=-1]
+                        incompatibilities_Locked= [l for l in incompatibilities if lanes[l]["lockUntill"]!=-1]
                         if len(incompatibilities_Locked) > 0: continue  #ci sono incompatibilità bloccate-> hanno loro la priorità -> successivo
                         for lane in incompatibilities:
                             lanes[lane]["nextState"]='y'
+                            lanes[lane]["lockUntill"]=secondFromStart.value+settings.traffic.yellowTime+2       #per il rosso? ( già gestito anche da un altra parte)
                     else:
                         isAccepted=True
 
                 if isAccepted:
                     acceptedLanes.append(lane)
                     lanes[lane]["nextState"]='G'
+                    if lanes[lane]["currentState"]!='G':
+                        lanes[lane]["lockUntill"]=secondFromStart.value+settings.traffic.minGreenTime
                 
             #se non ci sono modifiche, setto lo stato successivo a quello corrente
             for lane in lanes:
@@ -322,37 +432,44 @@ class Simulation:
 
 
             #creo la stringa per settare i semafori
-            stateStrLen=max([ max(lanes[lane]["strIndexes"]) for lane in lanes ])
-            stateStr=" "*stateStrLen
+            stateStrLen=max([ max(lanes[lane]["strIndexes"]) for lane in lanes ])+1
+            
+            stateStr=['']*stateStrLen
             for lane in lanes:
                 for i in lanes[lane]["strIndexes"]:
                     stateStr[i]=lanes[lane]["nextState"]
 
+            stateStr="".join(stateStr)
 
             #setto lo stato del semaforo corrente
             sumo.trafficlight.setRedYellowGreenState(settings.traffic.trafficLightID,stateStr)
 
-            #ottengo la Phase con il punteggio maggiore
-            #Phase=max(PhasePriority, key=lambda x:PhasePriority[x])
+            
+            #file1 = open("myfile.txt", "a")  # append mode
+            #file1.write(stateStr+"\n")
+            #file1.close()
 
+            """
+            if laststateStr==stateStr:
+                timeLastChange+=1
+            else:
+                timeLastChange=0
+                laststateStr=stateStr
 
-
-
-
-
-
-
-
-
-
-
-
+            if timeLastChange > 120:    #2 minuti? bha proviamo ( molto limitante )
+                exitCode=-1                                            
+                break         
+            """
           
           
             
-
-        # Get the simulation report
+            
         total_simulation_time = sumo.simulation.getTime()
+        #trucchetto per dirgli che ha finito la simulazione "sprecando" tempo e deve essere valutata 0
+        #if breakForWasteTime:
+        #    total_simulation_time=settings.maxSimulationTime
+
+
         max_time_loss = 0
         avg=0
         for vehicle_id in vehicles:
@@ -368,8 +485,11 @@ class Simulation:
         sumo.close()
 
 
-        return (total_simulation_time, max_time_loss , avg)
 
+        
+        return (total_simulation_time, max_time_loss , avg,exitCode)
+        #exitCode
+        #-1 -> interrotto prima della fine xke non cambia nulla
 
 
 

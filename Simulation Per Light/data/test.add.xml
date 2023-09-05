@@ -12,5 +12,5 @@
 	<laneAreaDetector id="-E5_0D" lane="-E5_0" pos="0" endPos="70" file="NUL" />
 	<laneAreaDetector id="E2_0D" lane="E2_0" pos="0" endPos="20" file="NUL" />
 	<laneAreaDetector id="E2_1D" lane="E2_1" pos="0" endPos="20" file="NUL" />
-	<laneAreaDetector id="-E1_0D" lane="-E1_0" pos="128" endPos="148" file="NUL" />
+	<laneAreaDetector id="-E1_0D" lane="-E1_0" pos="88" endPos="148" file="NUL" />
 </additional>
