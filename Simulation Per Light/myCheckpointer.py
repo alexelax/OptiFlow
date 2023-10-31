@@ -7,7 +7,7 @@ import time
 
 from neat.population import Population
 from neat.reporting import BaseReporter
-
+from itertools import count
 
 class myCheckpointer(BaseReporter):
     """
@@ -86,4 +86,8 @@ class myCheckpointer(BaseReporter):
         with gzip.open(filename) as f:
             generation, config, population, species_set, rndstate = pickle.load(f)
             random.setstate(rndstate)
-            return Population(config, (population, species_set, generation+1))
+            pop =  Population(config, (population, species_set, generation+1))
+            #imposto l'indexer ( contatore che da l'id al prossimo genoma creato) uguale al numero massimo presente nella popolazione +1
+            #altrimenti quando riprendo il train da una situazione esistente, gli id vengono generati da 1 e vanno a sovrascrivere i vecchi genomi!
+            pop.reproduction.genome_indexer = count(max(population.keys())+1)       
+            return pop
