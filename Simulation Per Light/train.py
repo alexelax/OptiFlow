@@ -366,7 +366,7 @@ def main():
         for i in range (0,settings.neat_num_generations):
             winner = population.run(eval_genome, 1)
 
-            #salva il winner
+            #salva il winner -> ora lo salva il myCheckpointer!
             #with open(settings.winningPath, 'wb') as f:
             #    pickle.dump(winner, f)
 

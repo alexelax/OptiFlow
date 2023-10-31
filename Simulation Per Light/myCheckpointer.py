@@ -66,7 +66,6 @@ class myCheckpointer(BaseReporter):
             data = (generation, config, population, species_set, random.getstate())
             pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-        #TODO:??  -> salvo anche il winner
 
         #trovo il winnerID ( chi ha il fitness più alto )
         t = {p:population[p].fitness for p in population if population[p].fitness!=None }
