@@ -16,6 +16,10 @@ import visualize
 from simulation import SimulationThread,Simulation,SimulationAgent_HAND_GA
 from multiprocessing import Process, Manager,Value
 
+
+
+
+
 settings = Settings()
 portManager = PortManager(threading.Lock())
 portManager.addPort(settings.ports)
@@ -71,7 +75,7 @@ def toString(genomes,processes,deleteBefore=True,maxElPerRow=20):
 
     
    
-    
+ 
     #pulisco quelle prima
     if deleteBefore:
         numBlock=math.ceil(len(tmp)/maxElPerRow)
