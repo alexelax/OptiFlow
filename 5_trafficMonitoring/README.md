@@ -1,0 +1,1 @@
+script che con YOLO estrapola in tempo reale i dati e comanda il semaforo ( creazione delle API per la gestione del semaforo e poi mi adatto a quelle per l'hw ) 

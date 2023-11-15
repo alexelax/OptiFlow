@@ -1,0 +1,1 @@
+script per testare se usare NEAT/neural network o  pensare ad uno script "a mano" per gestire i semafori 

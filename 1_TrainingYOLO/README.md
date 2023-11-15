@@ -1,0 +1,1 @@
+script che permette di trainare YOLO e restiture i pt/openvino/ecc
