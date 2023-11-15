@@ -9,8 +9,8 @@ import math
 import cv2
 import time
 import numpy as np
-from compatibilityLayer import *
-from SMA import SMA_sequence
+from _libs.compatibilityLayer import *
+from _libs.SMA import SMA_sequence
 from shapely.geometry import polygon
 
 #TODO: modificare tutti i rif di cv2 in questo modo ( dovrebbe essere più veloce)

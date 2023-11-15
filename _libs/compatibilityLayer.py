@@ -54,7 +54,8 @@ class ModelCompatibilityLayerV5:
         
 class ModelCompatibilityLayerV8:
     def __init__(self,folder,ptPath):
-        from ultralytics.yolo.engine.model import YOLO
+        from ultralytics import YOLO
+        
 
         #toglie i log della v8
         logging.disable(logging.CRITICAL)
@@ -63,11 +64,16 @@ class ModelCompatibilityLayerV8:
         #logger = logging.getLogger('ultralytics')
         #logger.disabled = True
 
-        self.model = YOLO(ptPath,type="v8")
+        self.model = YOLO(ptPath)
+        
 
         
     def __call__(self,frame):
         return resultsIterV8(self.model.predict(source=frame))
+    
+    def track(self,frame):
+        return resultsIterV8(self.model.track(source=frame,persist=True))
+        
     @property
     def names(self):
         return self.model.names
@@ -95,6 +101,8 @@ class resultsIterV8:
 
     def _resetResulVariable(self):
         self.boxes = self.results[0].boxes.xyxy.cpu().numpy()
+        #(x traking ) 
+        #self.ids = self.results[0].boxes.id.cpu().numpy().astype(int)       #TODO: a volte l'id non c'è o da errore
         self.probs = self.results[0].boxes.conf.cpu().numpy()
         self.cls = self.results[0].boxes.cls.cpu().numpy()
         self._boxes_size=len(self.boxes)
@@ -125,7 +133,8 @@ class resultsIterV8:
                     raise StopIteration
             
             i=self._current_boxes
-            member =  int(self.boxes[i][0]),int(self.boxes[i][1]),int(self.boxes[i][2]),int(self.boxes[i][3]),float(self.probs[i]),int(self.cls[i])
+            #TODO: aggiunta dell'ID ( x traking ) 
+            member =  int(self.boxes[i][0]),int(self.boxes[i][1]),int(self.boxes[i][2]),int(self.boxes[i][3]),float(self.probs[i]),int(self.cls[i]) #,int(self.ids[i]) 
             self._current_boxes += 1
             return member
         raise StopIteration
