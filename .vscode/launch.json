@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Python: Current File",
             "type": "python",
@@ -12,6 +13,16 @@
             "console": "integratedTerminal",    //integratedTerminal       //internalConsole
             "justMyCode": true,
             "cwd": "${fileDirname}"
+        },
+
+        {
+            "name": "2.infer",
+            "type": "python",
+            "request": "launch",
+            "program": "infer.py",
+            "console": "integratedTerminal",    //integratedTerminal       //internalConsole
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/2_InferYOLO"     //non so se lasciare ${workspaceFolder} oppure ${workspaceFolder}/2_InferYOLO .... 
         }
     ]
 }

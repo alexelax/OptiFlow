@@ -1,8 +1,13 @@
+#TODO: sto implementado anche il track delle auto, ma non va messo qua!! va messo nella "Extrapolate"
+#questo codice dovrebbe fare l'infer più velocemente possibile in modo da analizzare i tempi "reali" di YOLO
 
+
+#SCOPO:
 #aprire 4 flussi video
 #ciascun frame unirlo in un unico flusso video
 #analizzare il frame con YOLO
 #visualizzare l'output con cv2
+
 
 
 import math
@@ -26,6 +31,8 @@ from  _libs.SMA import SMA_sequence
 from  _libs.cv2_helper import *
 from _libs.compatibilityLayer import *
 from _libs.chrono import Chrono
+from _libs.auto import *
+
 
 
 #----------------------------------
@@ -33,6 +40,8 @@ from _libs.chrono import Chrono
 settings={
     "saveOutputToFile":False,
     "frameByFrame":False,
+    "Track":False,
+    
 
 }
 
@@ -56,9 +65,10 @@ def getFrame(caps):
             cap.set(cv2.CAP_PROP_POS_FRAMES,0)      #resetto il video da capo
             ret, frame = cap.read()
 
- 
-        frame=resizeInWidth(frame,320)      # Resize the frames to the same size     ( la funzione può essere ottimizzata in base al flusso video )
-        #frame=resize(frame,320,320)      # sembra che onnx vuole entrambe le dim a 640
+        finalSize=320   #640
+
+        frame=resizeInWidth(frame,finalSize)      # Resize the frames to the same size     ( la funzione può essere ottimizzata in base al flusso video )
+        #frame=resize(frame,finalSize,finalSize)      # sembra che onnx vuole entrambe le dim a 320/640 ( quadrato ) 
 
         frames.append(frame)
 
@@ -113,28 +123,35 @@ def  main(settings):
     ]
 
 
-    outToFile=None
-    #per salvare un video su disco
-    if settings["saveOutputToFile"]:
-        #apro il flusso
-        fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-        outToFile=cv2.VideoWriter('output.mp4', fourcc, 20.0,(640, 320))
+    
 
         
-
-        
-
 
     #butto il primo frame per prendere le dimensioni di ogni singolo flusso ( DA RIVEDERE IL RELEASE? )
+
+
+
     frame=getFrame(caps)
     original_height, original_width = frame.shape[:2]
     original_height=int(original_height/2)
     original_width =int(original_width/2)
 
+
+    
+    outToFile=None
+    #per salvare un video su disco
+    if settings["saveOutputToFile"]:
+        #apro il flusso
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        outToFile=cv2.VideoWriter('output.mp4', fourcc, 20.0,(frame.shape[1], frame.shape[0]))      #si, nella "shape" larghezza e altezza sono invertiti... ma porco...
+
+
+
     avrSample=4
     autoNumbersAvr=[ SMA_sequence(avrSample),SMA_sequence(avrSample),SMA_sequence(avrSample),SMA_sequence(avrSample)]
 
     chrono = Chrono()
+    autos=  autoCollection()
     while True:
 
 
@@ -149,8 +166,11 @@ def  main(settings):
 
         
         # analisi del frame tramite YOLO
-        results = model(frame)
-        #results = model.track(frame)       #TODO: solo in v8 -> x traking
+        if settings["Track"]:
+            results = model.track(frame)
+        else:
+            results = model(frame)
+      
 
 
         
@@ -161,15 +181,17 @@ def  main(settings):
         centers=[]
         # visualizzazione dei risultati sull'immagine
         #for result in results.xyxy[0]:
-        for result in results:
-            x1, y1, x2, y2,confidence,classNumber = result
-            xc,yc= int((x1+x2)/2),int((y1+y2)/2)
+        for r in results:
+            r:Result
+            
+
+            #xc,yc= int((r.start.x+r.end.x)/2),int((r.start.y+r.end.Y)/2)
 
 
-            c=(xc,yc)
+            c= r.start.middle(r.end)
             valid=True
             for center in centers:
-                if math.dist(center, c)<10:          #10  = da definire
+                if c.distance(center)<10:          #10  = da definire
                     valid=False
                     break
             if not valid:
@@ -180,25 +202,30 @@ def  main(settings):
 
             #TODO: implementare una maschera di selezione per determinare l'index della "corsia" della macchina ( e quelle che sono su corsie sbagliate)
 
-            
 
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-            cv2.circle(frame,(xc,yc),2,(255, 0, 0),2)
-            cv2.putText(frame, f'{model.names[classNumber]} {confidence:.2f}', (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
-            #TODO: x traking -> vedere l'id dell'oggetto
-            #cv2.putText(frame, f'{id} {confidence:.2f}', (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            cv2.rectangle(frame, r.start.unpack(), r.end.unpack(), (0, 0, 255), 2)
+            cv2.circle(frame,c.unpack(),2,(255, 0, 0),2)
+            #{model.names[r.classNumber]} -> permette di visualizzare il tipo di oggetto ma visto che sono tutti "veichle" non ha tanto senso
+            cv2.putText(frame, f'{r.id if r.id!=None else ""}  {r.confidence:.2f}', r.start.moveNew(0,-10).unpack(), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
             #metodo ( merdoso ) per identificare la posizione di una macchina e metterla nell'array 
             index=0
-            if( xc>original_width):
+            if( c.X>original_width):
                 index=2
             
-            if( yc>original_height):
+            if( c.Y>original_height):
                 index+=1
 
 
             autoNumbers[index]+=1
+
+            if r.id!=None:
+                a = autos.getOrCreate(r.id)
+                a.moved(c.X,c.Y)
+                if a.getTrackLen() >2:
+
+                    cv2.polylines(frame,  [np.array(a.getTrack(),np.int32)],   False,(255,0,0),1)
 
         
         #aggiorno le medie delle macchine
@@ -219,7 +246,7 @@ def  main(settings):
 
 
         #salvo il frame nell'output
-        if settings["saveOutputToFile"]:
+        if outToFile!=None:
             outToFile.write(frame)
 
         # interruzione con tasto 'q'
@@ -234,7 +261,7 @@ def  main(settings):
         
 
     #chiudo il flusso 
-    if settings["saveOutputToFile"]:
+    if outToFile!=None:
         outToFile.release()
 
     # rilascio del flusso video e della finestra

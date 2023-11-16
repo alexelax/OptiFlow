@@ -2,6 +2,14 @@ import logging
 import torch
 
 
+#recupero il path del file corrente, prendo la cartella padre e la aggiunto al sys.path ( variabili di sistema del processo )
+#cosi trova le librerie della cartella Libs
+import os,sys
+dir_path = os.path.dirname(os.path.realpath(__file__))+"\.."
+sys.path.append(dir_path)
+
+from _libs.point import Point
+
 
 
 class ModelCompatibilityLayerV5_OnnxCPU:
@@ -24,7 +32,9 @@ class ModelCompatibilityLayerV5_OnnxCPU:
     def val(self):
         return self.val()
     
-
+    def track(self,frame):
+        raise "Track not implemented!"
+    
 class ModelCompatibilityLayerV5_TensorRT:
     def __init__(self,folder,ptPath):
         self.model = torch.hub.load(folder,'custom', ptPath,source='local')
@@ -38,6 +48,9 @@ class ModelCompatibilityLayerV5_TensorRT:
 
     def val(self):
         return self.val()
+    
+    def track(self,frame):
+        raise "Track not implemented!"
 
 class ModelCompatibilityLayerV5:
     def __init__(self,folder,ptPath):
@@ -51,6 +64,10 @@ class ModelCompatibilityLayerV5:
 
     def val(self):
         return self.val()
+    
+    def track(self,frame):
+        raise "Track not implemented!"
+    
         
 class ModelCompatibilityLayerV8:
     def __init__(self,folder,ptPath):
@@ -92,20 +109,23 @@ class resultsIterV5:
         if self._current_index < self._results_size:  
             results=self.results
             i=self._current_index
-            member =  int(results[i][0]),int(results[i][1]),int(results[i][2]),int(results[i][3]),float(results[i][4]),int(results[i][5])
+            res =  Result(int(results[i][0]),int(results[i][1]),int(results[i][2]),int(results[i][3]),float(results[i][4]),int(results[i][5]))
             self._current_index += 1
-            return member
+            return res
         raise StopIteration
 
 class resultsIterV8:
 
     def _resetResulVariable(self):
-        self.boxes = self.results[0].boxes.xyxy.cpu().numpy()
-        #(x traking ) 
-        #self.ids = self.results[0].boxes.id.cpu().numpy().astype(int)       #TODO: a volte l'id non c'è o da errore
-        self.probs = self.results[0].boxes.conf.cpu().numpy()
-        self.cls = self.results[0].boxes.cls.cpu().numpy()
+        self.boxes = self.results[0].boxes.xyxy.cpu().numpy().astype(int)    
+        self.probs = self.results[0].boxes.conf.cpu().numpy().astype(float)    
+        self.cls = self.results[0].boxes.cls.cpu().numpy().astype(int)   
         self._boxes_size=len(self.boxes)
+
+        self.ids = None
+        if self.results[0].boxes.id!=None:
+            self.ids= self.results[0].boxes.id.cpu().numpy().astype(int)      
+
 
 
     def __init__(self, results):
@@ -133,9 +153,23 @@ class resultsIterV8:
                     raise StopIteration
             
             i=self._current_boxes
-            #TODO: aggiunta dell'ID ( x traking ) 
-            member =  int(self.boxes[i][0]),int(self.boxes[i][1]),int(self.boxes[i][2]),int(self.boxes[i][3]),float(self.probs[i]),int(self.cls[i]) #,int(self.ids[i]) 
+
+            id=None
+            if not self.ids is None:
+                id= self.ids[i]
+
+
+            res =  Result(self.boxes[i][0], self.boxes[i][1],   self.boxes[i][2],   self.boxes[i][3],   self.probs[i],  self.cls[i], id )
             self._current_boxes += 1
-            return member
+            return res
         raise StopIteration
 
+
+
+class Result:
+    def __init__(self,x1:int,y1:int,x2:int,y2:int,confidence:float,classNumber:int,id:int=None) -> None:
+        self.start=Point(x1,y1)
+        self.end=Point(x2,y2)
+        self.confidence=confidence
+        self.classNumber=classNumber
+        self.id=id
